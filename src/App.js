@@ -4,6 +4,7 @@ import SignUp from "./components/SignUp";
 import Login from "./components/Login";
 import UploadCV from "./components/UploadCV";
 import UploadJobDescription from "./components/UploadJobDescription";
+import AnalyzeNow from "./components/AnalyzeNow";
 
 function HomePage() {
   return (
@@ -66,9 +67,12 @@ function HomePage() {
             >
               Upload job description
             </Link>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg">
+            <Link
+              to="/analyze-now"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
               Analyze now!
-            </button>
+            </Link>
           </div>
 
           {/* Subtitle - moved below buttons */}
@@ -107,6 +111,7 @@ function App() {
           path="/upload-job-description"
           element={<UploadJobDescription />}
         />
+        <Route path="/analyze-now" element={<AnalyzeNow />} />
       </Routes>
     </Router>
   );
