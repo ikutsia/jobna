@@ -77,8 +77,8 @@ function HomePage() {
 
           {/* Subtitle - moved below buttons */}
           <p className="text-xl text-orange-600 font-semibold">
-            Hack into the mind of the employer using powerful AI tools and
-            increase your odds of being noticed, interviewed and hired.
+            Hack into the mind of the employer using AI and increase your odds
+            of being noticed, interviewed and hired.
           </p>
         </div>
       </section>
