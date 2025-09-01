@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import SignUp from "./components/SignUp";
+import Login from "./components/Login";
 
 function HomePage() {
   return (
@@ -25,9 +26,12 @@ function HomePage() {
               >
                 Sign Up
               </Link>
-              <button className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded">
+              <Link
+                to="/login"
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+              >
                 Log In
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -89,6 +93,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </Router>
   );
