@@ -48,7 +48,7 @@ function Login() {
     if (validateForm()) {
       // Handle form submission here
       console.log("Login submitted:", formData);
-      alert("Login successful! Welcome back to Jobna!");
+      alert("Login successful! Welcome back to Jobna AI!");
     }
   };
 

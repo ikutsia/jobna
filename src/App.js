@@ -15,7 +15,7 @@ function HomePage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div>
-              <h1 className="text-2xl font-bold text-blue-600">jobna</h1>
+              <h1 className="text-2xl font-bold text-blue-600">jobna AI</h1>
             </div>
 
             {/* Right side buttons */}
@@ -49,8 +49,8 @@ function HomePage() {
           </h1>
 
           <h2 className="text-3xl font-bold text-blue-600 mb-8">
-            Supercharge your job search, applications and monitoring using our
-            powerful tools built just for you!
+            Supercharge your job search, applications and monitoring using
+            powerful AI tools built just for you!
           </h2>
 
           {/* Action Buttons */}
@@ -87,7 +87,7 @@ function HomePage() {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">jobna</h3>
+            <h3 className="text-2xl font-bold mb-4">jobna AI</h3>
             <p className="text-gray-400">
               Empowering job seekers with AI-powered tools to land their dream
               jobs faster and more effectively.

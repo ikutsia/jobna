@@ -71,7 +71,7 @@ function SignUp() {
     if (validateForm()) {
       // Handle form submission here
       console.log("Form submitted:", formData);
-      alert("Account created successfully! Welcome to Jobna!");
+      alert("Account created successfully! Welcome to Jobna AI!");
     }
   };
 
@@ -103,7 +103,7 @@ function SignUp() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Jobna</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Jobna AI</h1>
           <p className="text-gray-600">
             Create your account and start your journey to landing your dream job
           </p>
