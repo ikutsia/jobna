@@ -1,6 +1,8 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import SignUp from "./components/SignUp";
 
-function App() {
+function HomePage() {
   return (
     <div className="min-h-screen bg-blue-50">
       {/* Navigation Bar */}
@@ -17,9 +19,12 @@ function App() {
               <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
                 Your Dashboard
               </button>
-              <button className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded">
+              <Link
+                to="/signup"
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+              >
                 Sign Up
-              </button>
+              </Link>
               <button className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded">
                 Log In
               </button>
@@ -75,6 +80,17 @@ function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    </Router>
   );
 }
 
