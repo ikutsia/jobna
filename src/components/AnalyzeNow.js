@@ -16,12 +16,7 @@ function AnalyzeNow() {
     keywordAnalysis: {},
   });
 
-  const [errors, setErrors] = useState({});
 
-  const validateForm = () => {
-    // Since files are already uploaded, no validation needed
-    return true;
-  };
 
   const simulateAnalysis = () => {
     setAnalysisData((prev) => ({
