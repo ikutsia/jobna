@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import SignUp from "./components/SignUp";
 import Login from "./components/Login";
 import UploadCV from "./components/UploadCV";
+import UploadJobDescription from "./components/UploadJobDescription";
 
 function HomePage() {
   return (
@@ -59,9 +60,12 @@ function HomePage() {
             >
               Upload CV
             </Link>
-            <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg">
+            <Link
+              to="/upload-job-description"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
               Upload job description
-            </button>
+            </Link>
             <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg">
               Analyze now!
             </button>
@@ -99,6 +103,10 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/upload-cv" element={<UploadCV />} />
+        <Route
+          path="/upload-job-description"
+          element={<UploadJobDescription />}
+        />
       </Routes>
     </Router>
   );
