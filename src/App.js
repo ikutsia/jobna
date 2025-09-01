@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import SignUp from "./components/SignUp";
 import Login from "./components/Login";
+import UploadCV from "./components/UploadCV";
 
 function HomePage() {
   return (
@@ -52,9 +53,12 @@ function HomePage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg">
+            <Link
+              to="/upload-cv"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
               Upload CV
-            </button>
+            </Link>
             <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg">
               Upload job description
             </button>
@@ -94,6 +98,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/upload-cv" element={<UploadCV />} />
       </Routes>
     </Router>
   );
