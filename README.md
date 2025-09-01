@@ -1,70 +1,104 @@
-# Getting Started with Create React App
+# Jobna - Job Seekers Web Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern web application designed to help job seekers supercharge their job search with AI-powered tools.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **AI Resume Analysis**: Get instant feedback on your resume
+- **Smart Job Matching**: Find perfect job opportunities
+- **Application Tracking**: Monitor your job applications
+- **Modern UI**: Clean, professional design with Tailwind CSS
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- React 19
+- Tailwind CSS
+- PostCSS
+- Netlify (Deployment)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Local Development
 
-### `npm test`
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Start development server**:
+   ```bash
+   npm start
+   ```
 
-### `npm run build`
+3. **Build for production**:
+   ```bash
+   npm run build
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Deployment to Netlify
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Option 1: Deploy via Netlify UI (Recommended)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. **Push your code to GitHub**:
+   ```bash
+   git add .
+   git commit -m "Initial commit"
+   git push origin main
+   ```
 
-### `npm run eject`
+2. **Deploy on Netlify**:
+   - Go to [netlify.com](https://netlify.com)
+   - Click "New site from Git"
+   - Connect your GitHub account
+   - Select your repository
+   - Set build command: `npm run build`
+   - Set publish directory: `build`
+   - Click "Deploy site"
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Option 2: Deploy via Netlify CLI
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. **Install Netlify CLI**:
+   ```bash
+   npm install -g netlify-cli
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+2. **Login to Netlify**:
+   ```bash
+   netlify login
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3. **Deploy**:
+   ```bash
+   netlify deploy --prod
+   ```
 
-## Learn More
+### Option 3: Drag and Drop
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. **Build the project**:
+   ```bash
+   npm run build
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+2. **Drag the `build` folder** to [netlify.com](https://netlify.com)
 
-### Code Splitting
+## Netlify Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+The project includes the following Netlify configuration files:
 
-### Analyzing the Bundle Size
+- `netlify.toml`: Build settings and redirects
+- `public/_redirects`: Client-side routing support
+- `public/_headers`: Security headers and caching
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Environment Variables
 
-### Making a Progressive Web App
+No environment variables are required for basic functionality.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Custom Domain
 
-### Advanced Configuration
+After deployment, you can add a custom domain in your Netlify dashboard under "Domain settings".
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Support
 
-### Deployment
+For deployment issues, check the [Netlify documentation](https://docs.netlify.com/).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## License
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is private and proprietary.
