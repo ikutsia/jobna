@@ -103,7 +103,9 @@ function SignUp() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Jobna AI</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Join Jobna AI
+          </h1>
           <p className="text-gray-600">
             Create your account and start your journey to landing your dream job
           </p>
@@ -296,19 +298,19 @@ function SignUp() {
               <div className="ml-3 text-sm">
                 <label htmlFor="agreeToTerms" className="text-gray-700">
                   I agree to the{" "}
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     className="text-blue-600 hover:text-blue-500 font-medium"
                   >
                     Terms of Service
-                  </a>{" "}
+                  </button>{" "}
                   and{" "}
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     className="text-blue-600 hover:text-blue-500 font-medium"
                   >
                     Privacy Policy
-                  </a>
+                  </button>
                 </label>
                 {errors.agreeToTerms && (
                   <p className="mt-1 text-sm text-red-600">
@@ -377,12 +379,12 @@ function SignUp() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
-              <a
-                href="#"
+              <Link
+                to="/login"
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Sign in
-              </a>
+              </Link>
             </p>
           </div>
         </div>
