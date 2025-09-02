@@ -1,0 +1,16 @@
+# Firebase Configuration Template
+# Copy this content to a file named .env in your project root
+
+REACT_APP_FIREBASE_API_KEY=AIzaSyCV-ndDepO-mxSDmKAJHggfUbphCkIFnpc
+REACT_APP_FIREBASE_AUTH_DOMAIN=jobna-451c2.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=jobna-451c2
+REACT_APP_FIREBASE_STORAGE_BUCKET=jobna-451c2.firebasestorage.app
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=106696338896
+REACT_APP_FIREBASE_APP_ID=1:106696338896:web:2f1327e0a056a6c8271dd5
+REACT_APP_FIREBASE_MEASUREMENT_ID=G-DEK5L2KVL2
+
+# Instructions:
+# 1. Create a new file named .env in your project root
+# 2. Copy the above content into it
+# 3. Save the file
+# 4. Restart your development server

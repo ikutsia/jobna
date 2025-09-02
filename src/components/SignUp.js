@@ -1,7 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../firebase/auth";
 
 function SignUp() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -68,12 +72,35 @@ function SignUp() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Handle form submission here
-      console.log("Form submitted:", formData);
-      alert("Account created successfully! Welcome to Jobna AI!");
+      setLoading(true);
+      setSubmitError("");
+
+      try {
+        const result = await registerUser(
+          formData.email,
+          formData.password,
+          formData
+        );
+
+        if (result.success) {
+          console.log("User registered successfully:", result.user);
+          // Redirect to account page
+          navigate("/account");
+        } else {
+          setSubmitError(
+            result.error || "Registration failed. Please try again."
+          );
+          console.error("Registration error:", result.error);
+        }
+      } catch (error) {
+        setSubmitError("An unexpected error occurred. Please try again.");
+        console.error("Registration error:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -115,6 +142,13 @@ function SignUp() {
 
         {/* Sign Up Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Error Message */}
+          {submitError && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {submitError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
@@ -566,9 +600,14 @@ function SignUp() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              disabled={loading}
+              className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              } text-white`}
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

@@ -1,7 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../firebase/auth";
 
 function Login() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -43,12 +47,31 @@ function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Handle form submission here
-      console.log("Login submitted:", formData);
-      alert("Login successful! Welcome back to Jobna AI!");
+      setLoading(true);
+      setSubmitError("");
+
+      try {
+        const result = await loginUser(formData.email, formData.password);
+
+        if (result.success) {
+          console.log("User logged in successfully:", result.user);
+          // Redirect to account page
+          navigate("/account");
+        } else {
+          setSubmitError(
+            result.error || "Login failed. Please check your credentials."
+          );
+          console.error("Login error:", result.error);
+        }
+      } catch (error) {
+        setSubmitError("An unexpected error occurred. Please try again.");
+        console.error("Login error:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -90,6 +113,13 @@ function Login() {
 
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Error Message */}
+          {submitError && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {submitError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
@@ -170,9 +200,14 @@ function Login() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              disabled={loading}
+              className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              } text-white`}
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 

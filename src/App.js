@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
 import SignUp from "./components/SignUp";
 import Login from "./components/Login";
 import UploadCV from "./components/UploadCV";
@@ -7,8 +8,11 @@ import UploadJobDescription from "./components/UploadJobDescription";
 import AnalyzeNow from "./components/AnalyzeNow";
 import TermsOfService from "./components/TermsOfService";
 import PrivacyPolicy from "./components/PrivacyPolicy";
+import PersonalAccount from "./components/PersonalAccount";
 
 function HomePage() {
+  const { user, loading, handleLogout } = useAuth();
+
   return (
     <div className="min-h-screen bg-blue-50">
       {/* Navigation Bar */}
@@ -22,24 +26,47 @@ function HomePage() {
 
             {/* Right side buttons */}
             <div className="flex items-center space-x-4">
-              <span className="text-red-600 font-medium text-sm">
-                Feature coming soon...
-              </span>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-                Your AI Job Dashboard
-              </button>
-              <Link
-                to="/signup"
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
-              >
-                Sign Up
-              </Link>
-              <Link
-                to="/login"
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
-              >
-                Log In
-              </Link>
+              {!loading && (
+                <>
+                  {user ? (
+                    <>
+                      <Link
+                        to="/account"
+                        className="text-blue-600 hover:text-blue-700 font-semibold py-2 px-4 rounded transition-colors"
+                      >
+                        My Account
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-red-600 font-medium text-sm">
+                        Feature coming soon...
+                      </span>
+                      <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                        Your AI Job Dashboard
+                      </button>
+                      <Link
+                        to="/signup"
+                        className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+                      >
+                        Sign Up
+                      </Link>
+                      <Link
+                        to="/login"
+                        className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+                      >
+                        Log In
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -111,6 +138,17 @@ function HomePage() {
               >
                 Privacy Policy
               </Link>
+              {user && (
+                <>
+                  <span className="text-gray-400 text-sm">•</span>
+                  <Link
+                    to="/account"
+                    className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
+                  >
+                    My Account
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Social Media Icons */}
@@ -176,6 +214,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/account" element={<PersonalAccount />} />
         <Route path="/upload-cv" element={<UploadCV />} />
         <Route
           path="/upload-job-description"
