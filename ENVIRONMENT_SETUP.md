@@ -1,8 +1,8 @@
-# 🔐 Environment Variables Setup for Firebase
+# 🔐 Environment Variables Setup for Firebase & OpenAI
 
 ## 📋 What This Does
 
-This setup moves your Firebase credentials from the code to environment variables, making your app more secure and following best practices.
+This setup moves your Firebase credentials and OpenAI API key from the code to environment variables, making your app more secure and following best practices.
 
 ## 🚀 Setup Instructions
 
@@ -23,6 +23,9 @@ REACT_APP_FIREBASE_STORAGE_BUCKET=jobna-451c2.firebasestorage.app
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=106696338896
 REACT_APP_FIREBASE_APP_ID=1:106696338896:web:2f1327e0a056a6c8271dd5
 REACT_APP_FIREBASE_MEASUREMENT_ID=G-DEK5L2KVL2
+
+# OpenAI Configuration
+REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ### 3. **Important Notes**
@@ -32,9 +35,16 @@ REACT_APP_FIREBASE_MEASUREMENT_ID=G-DEK5L2KVL2
 - **Restart your development server** after creating the file
 - **Never commit this file** to version control (it's already in `.gitignore`)
 
-### 4. **Verify Setup**
+### 4. **OpenAI API Setup**
 
-After creating the `.env` file and restarting your server, your Firebase should work exactly the same, but now your credentials are secure!
+- **Get API Key**: Visit [OpenAI Platform](https://platform.openai.com/api-keys) and create a new API key
+- **Free Tier**: OpenAI offers $5 free credit per month
+- **Cost Management**: The app is configured to stay within free tier limits (50 API calls/month)
+- **Rate Limiting**: Built-in usage tracking prevents exceeding monthly limits
+
+### 5. **Verify Setup**
+
+After creating the `.env` file and restarting your server, your Firebase and OpenAI should work exactly the same, but now your credentials are secure!
 
 ## 🔒 Security Benefits
 
@@ -51,6 +61,13 @@ If Firebase stops working after this change:
 2. **Check file location** - must be in project root
 3. **Restart development server** - `npm start`
 4. **Check browser console** for any error messages
+
+If OpenAI API stops working:
+
+1. **Check API key** - verify it's correct and active
+2. **Check credit balance** - ensure you have available credit
+3. **Check usage limits** - verify you haven't exceeded monthly limits
+4. **Check browser console** for specific error messages
 
 ## 📱 Production Deployment
 

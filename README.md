@@ -8,6 +8,7 @@ A modern web application designed to help job seekers supercharge their job sear
 - **Smart Job Matching**: Find perfect job opportunities
 - **Application Tracking**: Monitor your job applications
 - **Modern UI**: Clean, professional design with Tailwind CSS
+- **Demo Mode**: Test features without OpenAI API calls
 
 ## Tech Stack
 
@@ -19,11 +20,13 @@ A modern web application designed to help job seekers supercharge their job sear
 ## Local Development
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Start development server**:
+
    ```bash
    npm start
    ```
@@ -38,6 +41,7 @@ A modern web application designed to help job seekers supercharge their job sear
 ### Option 1: Deploy via Netlify UI (Recommended)
 
 1. **Push your code to GitHub**:
+
    ```bash
    git add .
    git commit -m "Initial commit"
@@ -56,11 +60,13 @@ A modern web application designed to help job seekers supercharge their job sear
 ### Option 2: Deploy via Netlify CLI
 
 1. **Install Netlify CLI**:
+
    ```bash
    npm install -g netlify-cli
    ```
 
 2. **Login to Netlify**:
+
    ```bash
    netlify login
    ```
@@ -73,6 +79,7 @@ A modern web application designed to help job seekers supercharge their job sear
 ### Option 3: Drag and Drop
 
 1. **Build the project**:
+
    ```bash
    npm run build
    ```
@@ -89,7 +96,9 @@ The project includes the following Netlify configuration files:
 
 ## Environment Variables
 
-No environment variables are required for basic functionality.
+For full AI functionality, you'll need to set up OpenAI API keys. See `ENVIRONMENT_SETUP.md` for details.
+
+**Note**: The app includes a demo mode that works without API keys for testing purposes.
 
 ## Custom Domain
 
@@ -98,6 +107,23 @@ After deployment, you can add a custom domain in your Netlify dashboard under "D
 ## Support
 
 For deployment issues, check the [Netlify documentation](https://docs.netlify.com/).
+
+For OpenAI API issues, see `TROUBLESHOOTING.md`.
+
+## Demo Mode
+
+If you're experiencing OpenAI API quota issues or want to test the interface:
+
+1. Navigate to the "Analyze Now" page
+2. Click the **"Demo Mode"** button
+3. View sample analysis results without API calls
+
+This is perfect for:
+
+- Testing the interface
+- Demonstrating features
+- Development and testing
+- When API quota is exceeded
 
 ## License
 
