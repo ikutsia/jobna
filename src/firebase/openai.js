@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
+import { doc, getDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "./config";
 
 // Initialize OpenAI client
