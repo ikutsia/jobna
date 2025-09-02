@@ -5,6 +5,8 @@ import Login from "./components/Login";
 import UploadCV from "./components/UploadCV";
 import UploadJobDescription from "./components/UploadJobDescription";
 import AnalyzeNow from "./components/AnalyzeNow";
+import TermsOfService from "./components/TermsOfService";
+import PrivacyPolicy from "./components/PrivacyPolicy";
 
 function HomePage() {
   return (
@@ -95,6 +97,21 @@ function HomePage() {
               Empowering job seekers with AI-powered tools to land their dream
               jobs faster and more effectively.
             </p>
+            <div className="flex justify-center space-x-6 mb-6">
+              <Link
+                to="/terms-of-service"
+                className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
+              >
+                Terms of Service
+              </Link>
+              <span className="text-gray-400 text-sm">•</span>
+              <Link
+                to="/privacy-policy"
+                className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
+              >
+                Privacy Policy
+              </Link>
+            </div>
 
             {/* Social Media Icons */}
             <div className="flex justify-center space-x-6">
@@ -157,6 +174,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/upload-cv" element={<UploadCV />} />
         <Route
           path="/upload-job-description"

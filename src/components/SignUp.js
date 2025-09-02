@@ -541,19 +541,19 @@ function SignUp() {
               <div className="ml-3 text-sm">
                 <label htmlFor="agreeToTerms" className="text-gray-700">
                   I agree to the{" "}
-                  <button
-                    type="button"
-                    className="text-blue-600 hover:text-blue-500 font-medium"
+                  <Link
+                    to="/terms-of-service"
+                    className="text-blue-600 hover:text-blue-500 font-medium underline"
                   >
                     Terms of Service
-                  </button>{" "}
+                  </Link>{" "}
                   and{" "}
-                  <button
-                    type="button"
-                    className="text-blue-600 hover:text-blue-500 font-medium"
+                  <Link
+                    to="/privacy-policy"
+                    className="text-blue-600 hover:text-blue-500 font-medium underline"
                   >
                     Privacy Policy
-                  </button>
+                  </Link>
                 </label>
                 {errors.agreeToTerms && (
                   <p className="mt-1 text-sm text-red-600">
