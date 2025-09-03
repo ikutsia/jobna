@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { analyzeCV, getRemainingCalls } from "../firebase/openai";
-import { getCurrentUser } from "../firebase/auth";
+import { getRemainingCalls } from "../firebase/openai";
 import { extractTextFromFile, validateFile } from "../utils/textExtractor";
 import { useAuth } from "../hooks/useAuth";
 
@@ -14,13 +13,6 @@ function UploadCV() {
     fileSize: "",
     isUploading: false,
     uploadProgress: 0,
-  });
-
-  const [analysisData, setAnalysisData] = useState({
-    isAnalyzing: false,
-    analysisComplete: false,
-    analysisResults: null,
-    error: null,
   });
 
   const [usageInfo, setUsageInfo] = useState({
@@ -135,13 +127,7 @@ function UploadCV() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-    // Reset analysis data when file is removed
-    setAnalysisData({
-      isAnalyzing: false,
-      analysisComplete: false,
-      analysisResults: null,
-      error: null,
-    });
+
     // Reset success message
     setUploadSuccess(false);
     // Clear localStorage when file is removed
@@ -150,7 +136,7 @@ function UploadCV() {
   };
 
   // Check user's remaining API calls
-  const checkUsage = async () => {
+  const checkUsage = useCallback(async () => {
     try {
       if (user) {
         const remaining = await getRemainingCalls(user.uid);
@@ -160,88 +146,14 @@ function UploadCV() {
       console.error("Error checking usage:", error);
       setUsageInfo({ remainingCalls: 0, isLoading: false });
     }
-  };
-
-  // Analyze CV with OpenAI
-  const handleAnalyze = async () => {
-    if (!fileData.file) {
-      setErrors((prev) => ({ ...prev, file: "Please select a file first" }));
-      return;
-    }
-
-    try {
-      setAnalysisData((prev) => ({
-        ...prev,
-        isAnalyzing: true,
-        error: null,
-      }));
-
-      if (!user) {
-        throw new Error("Please log in to analyze your CV");
-      }
-
-      // Check usage limits
-      if (usageInfo.remainingCalls <= 0) {
-        throw new Error(
-          "Monthly API call limit reached. Please upgrade or wait until next month."
-        );
-      }
-
-      // Extract text from file
-      const fileText = await extractTextFromFile(fileData.file);
-
-      // Store CV text in localStorage for AnalyzeNow component
-      localStorage.setItem("cvText", fileText);
-      localStorage.setItem(
-        "uploadedCV",
-        JSON.stringify({
-          name: fileData.fileName,
-          size: fileData.fileSize,
-          type: fileData.file.type,
-        })
-      );
-
-      // Analyze with OpenAI
-      const results = await analyzeCV(fileText, user.uid);
-
-      setAnalysisData({
-        isAnalyzing: false,
-        analysisComplete: true,
-        analysisResults: results,
-        error: null,
-      });
-
-      // Update usage info
-      await checkUsage();
-    } catch (error) {
-      console.error("CV Analysis error:", error);
-
-      let errorMessage = error.message;
-
-      // Handle specific OpenAI errors
-      if (error.message.includes("429") || error.message.includes("quota")) {
-        errorMessage =
-          "OpenAI API quota exceeded. Please check your billing or wait until next month.";
-      } else if (error.message.includes("API key")) {
-        errorMessage =
-          "OpenAI API key not configured. Please check your environment setup.";
-      }
-
-      setAnalysisData({
-        isAnalyzing: false,
-        analysisComplete: false,
-        analysisResults: null,
-        error: errorMessage,
-      });
-    }
-  };
+  }, [user]);
 
   // Load usage info on component mount
   useEffect(() => {
     if (user) {
       checkUsage();
     }
-  }, [user]);
+  }, [user, checkUsage]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -557,89 +469,6 @@ function UploadCV() {
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Analysis Results */}
-            {analysisData.analysisComplete && analysisData.analysisResults && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold text-green-800 mb-4">
-                  AI Analysis Results
-                </h3>
-
-                {/* Skills */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-green-700 mb-2">
-                    Key Skills Identified
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisData.analysisResults.skills?.map(
-                      (skill, index) => (
-                        <span
-                          key={index}
-                          className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* Experience Level */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-green-700 mb-2">
-                    Experience Level
-                  </h4>
-                  <p className="text-sm text-green-600">
-                    {analysisData.analysisResults.experienceLevel}
-                  </p>
-                </div>
-
-                {/* Strengths */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-green-700 mb-2">
-                    Strengths
-                  </h4>
-                  <ul className="list-disc list-inside text-sm text-green-600 space-y-1">
-                    {analysisData.analysisResults.strengths?.map(
-                      (strength, index) => (
-                        <li key={index}>{strength}</li>
-                      )
-                    )}
-                  </ul>
-                </div>
-
-                {/* Areas for Improvement */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-green-700 mb-2">
-                    Areas for Improvement
-                  </h4>
-                  <ul className="list-disc list-inside text-sm text-green-600 space-y-1">
-                    {analysisData.analysisResults.improvements?.map(
-                      (improvement, index) => (
-                        <li key={index}>{improvement}</li>
-                      )
-                    )}
-                  </ul>
-                </div>
-
-                {/* Summary */}
-                <div>
-                  <h4 className="text-sm font-medium text-green-700 mb-2">
-                    Professional Summary
-                  </h4>
-                  <p className="text-sm text-green-600">
-                    {analysisData.analysisResults.summary}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Error Display */}
-            {analysisData.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-red-600">{analysisData.error}</p>
               </div>
             )}
 
