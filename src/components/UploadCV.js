@@ -1,10 +1,13 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { analyzeCV, getRemainingCalls } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
 import { extractTextFromFile, validateFile } from "../utils/textExtractor";
+import { useAuth } from "../hooks/useAuth";
 
 function UploadCV() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [fileData, setFileData] = useState({
     file: null,
     fileName: "",
@@ -29,6 +32,42 @@ function UploadCV() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Check if user came from signup with a file
+  useEffect(() => {
+    if (user && !loading) {
+      // Check if there's a pending CV file from before signup
+      const pendingCV = localStorage.getItem("pendingCV");
+      if (pendingCV) {
+        try {
+          const cvData = JSON.parse(pendingCV);
+
+          // Convert base64 back to File object
+          const base64Response = fetch(cvData.file);
+          base64Response
+            .then((res) => res.blob())
+            .then((blob) => {
+              const file = new File([blob], cvData.fileName, {
+                type: cvData.type,
+              });
+              setFileData({
+                file: file,
+                fileName: cvData.fileName,
+                fileSize: cvData.fileSize,
+                isUploading: false,
+                uploadProgress: 0,
+              });
+            });
+
+          // Clear the pending CV
+          localStorage.removeItem("pendingCV");
+        } catch (error) {
+          console.error("Error parsing pending CV:", error);
+          localStorage.removeItem("pendingCV");
+        }
+      }
+    }
+  }, [user, loading]);
 
   const handleFileSelect = (file) => {
     if (file) {
@@ -113,7 +152,6 @@ function UploadCV() {
   // Check user's remaining API calls
   const checkUsage = async () => {
     try {
-      const user = getCurrentUser();
       if (user) {
         const remaining = await getRemainingCalls(user.uid);
         setUsageInfo({ remainingCalls: remaining, isLoading: false });
@@ -138,7 +176,6 @@ function UploadCV() {
         error: null,
       }));
 
-      const user = getCurrentUser();
       if (!user) {
         throw new Error("Please log in to analyze your CV");
       }
@@ -200,9 +237,11 @@ function UploadCV() {
   };
 
   // Load usage info on component mount
-  React.useEffect(() => {
-    checkUsage();
-  }, []);
+  useEffect(() => {
+    if (user) {
+      checkUsage();
+    }
+  }, [user]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -231,6 +270,32 @@ function UploadCV() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // If user is not authenticated, redirect to signup with file data
+    if (!user) {
+      // Store the file data temporarily
+      const fileBlob = fileData.file;
+      const fileReader = new FileReader();
+
+      fileReader.onload = () => {
+        // Store the file as base64 string
+        const fileBase64 = fileReader.result;
+        const pendingCV = {
+          file: fileBase64,
+          fileName: fileData.fileName,
+          fileSize: fileData.fileSize,
+          type: fileData.file.type,
+        };
+        localStorage.setItem("pendingCV", JSON.stringify(pendingCV));
+
+        // Redirect to signup
+        navigate("/signup");
+      };
+
+      fileReader.readAsDataURL(fileBlob);
+      return;
+    }
+
     if (validateForm()) {
       simulateUpload();
 
@@ -260,8 +325,10 @@ function UploadCV() {
         setTimeout(() => {
           console.log("CV uploaded:", fileData);
           setUploadSuccess(true);
-          // Auto-hide success message after 5 seconds
-          setTimeout(() => setUploadSuccess(false), 5000);
+          // Redirect to Upload Job Description page after successful upload
+          setTimeout(() => {
+            navigate("/upload-job-description");
+          }, 1500); // Wait 1.5 seconds to show success message before redirecting
         }, 2500);
       } catch (error) {
         console.error("Error extracting CV text:", error);
@@ -272,6 +339,18 @@ function UploadCV() {
       }
     }
   };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -304,7 +383,11 @@ function UploadCV() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Upload Your CV
           </h1>
-          <p className="text-gray-600">Upload your CV/resume to get started</p>
+          <p className="text-gray-600">
+            {user
+              ? "Upload your CV/resume to get started"
+              : "Select your CV file and sign up to get started"}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -449,55 +532,31 @@ function UploadCV() {
                       CV uploaded successfully! You can now analyze it with AI.
                     </p>
                   </div>
-                  <div className="mt-3">
-                    <Link
-                      to="/analyze-now"
-                      className="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded"
-                    >
-                      Go to Analysis Page
-                    </Link>
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* Usage Information */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-blue-800">
-                    API Usage This Month
-                  </h3>
-                  <p className="text-sm text-blue-600">
-                    {usageInfo.isLoading
-                      ? "Loading..."
-                      : `${usageInfo.remainingCalls} analyses remaining`}
-                  </p>
+            {/* Usage Information - Only show for authenticated users */}
+            {user && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-800">
+                      API Usage This Month
+                    </h3>
+                    <p className="text-sm text-blue-600">
+                      {usageInfo.isLoading
+                        ? "Loading..."
+                        : `${usageInfo.remainingCalls} analyses remaining`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-blue-600">Free Tier Limit</p>
+                    <p className="text-sm font-medium text-blue-800">
+                      50 calls/month
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-blue-600">Free Tier Limit</p>
-                  <p className="text-sm font-medium text-blue-800">
-                    50 calls/month
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Analysis Button */}
-            {fileData.file && !analysisData.analysisComplete && (
-              <div className="flex justify-center mb-6">
-                <button
-                  type="button"
-                  onClick={handleAnalyze}
-                  disabled={
-                    analysisData.isAnalyzing || usageInfo.remainingCalls <= 0
-                  }
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none"
-                >
-                  {analysisData.isAnalyzing
-                    ? "Analyzing..."
-                    : "Analyze CV with AI"}
-                </button>
               </div>
             )}
 
@@ -588,12 +647,34 @@ function UploadCV() {
             <div className="flex justify-center">
               <button
                 type="submit"
-                disabled={fileData.isUploading}
+                disabled={fileData.isUploading || !fileData.file}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none"
               >
-                {fileData.isUploading ? "Uploading..." : "Upload CV"}
+                {fileData.isUploading
+                  ? "Uploading..."
+                  : user
+                  ? "Upload CV"
+                  : "Continue to Sign Up"}
               </button>
             </div>
+
+            {/* Sign up prompt for unauthenticated users */}
+            {!user && (
+              <div className="text-center text-sm text-gray-600">
+                <p>
+                  Don't have an account?{" "}
+                  <Link
+                    to="/signup"
+                    className="text-blue-600 hover:text-blue-500 font-medium"
+                  >
+                    Sign up here
+                  </Link>
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  You can also sign up directly from the navigation bar above
+                </p>
+              </div>
+            )}
           </form>
         </div>
       </div>

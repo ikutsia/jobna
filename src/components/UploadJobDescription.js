@@ -1,23 +1,17 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
-import { analyzeJD, getRemainingCalls } from "../firebase/openai";
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getRemainingCalls } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
 import { extractTextFromFile, validateFile } from "../utils/textExtractor";
 
 function UploadJobDescription() {
+  const navigate = useNavigate();
   const [fileData, setFileData] = useState({
     file: null,
     fileName: "",
     fileSize: "",
     isUploading: false,
     uploadProgress: 0,
-  });
-
-  const [analysisData, setAnalysisData] = useState({
-    isAnalyzing: false,
-    analysisComplete: false,
-    analysisResults: null,
-    error: null,
   });
 
   const [usageInfo, setUsageInfo] = useState({
@@ -96,13 +90,6 @@ function UploadJobDescription() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-    // Reset analysis data when file is removed
-    setAnalysisData({
-      isAnalyzing: false,
-      analysisComplete: false,
-      analysisResults: null,
-      error: null,
-    });
     // Reset success message
     setUploadSuccess(false);
     // Clear localStorage when file is removed
@@ -124,83 +111,8 @@ function UploadJobDescription() {
     }
   };
 
-  // Analyze JD with OpenAI
-  const handleAnalyze = async () => {
-    if (!fileData.file) {
-      setErrors((prev) => ({ ...prev, file: "Please select a file first" }));
-      return;
-    }
-
-    try {
-      setAnalysisData((prev) => ({
-        ...prev,
-        isAnalyzing: true,
-        error: null,
-      }));
-
-      const user = getCurrentUser();
-      if (!user) {
-        throw new Error("Please log in to analyze your job description");
-      }
-
-      // Check usage limits
-      if (usageInfo.remainingCalls <= 0) {
-        throw new Error(
-          "Monthly API call limit reached. Please upgrade or wait until next month."
-        );
-      }
-
-      // Extract text from file
-      const fileText = await extractTextFromFile(fileData.file);
-
-      // Store JD text in localStorage for AnalyzeNow component
-      localStorage.setItem("jdText", fileText);
-      localStorage.setItem(
-        "uploadedJD",
-        JSON.stringify({
-          name: fileData.fileName,
-          size: fileData.fileSize,
-          type: fileData.file.type,
-        })
-      );
-
-      // Analyze with OpenAI
-      const results = await analyzeJD(fileText, user.uid);
-
-      setAnalysisData({
-        isAnalyzing: false,
-        analysisComplete: true,
-        analysisResults: results,
-        error: null,
-      });
-
-      // Update usage info
-      await checkUsage();
-    } catch (error) {
-      console.error("JD Analysis error:", error);
-
-      let errorMessage = error.message;
-
-      // Handle specific OpenAI errors
-      if (error.message.includes("429") || error.message.includes("quota")) {
-        errorMessage =
-          "OpenAI API quota exceeded. Please check your billing or wait until next month.";
-      } else if (error.message.includes("API key")) {
-        errorMessage =
-          "OpenAI API key not configured. Please check your environment setup.";
-      }
-
-      setAnalysisData({
-        isAnalyzing: false,
-        analysisComplete: false,
-        analysisResults: null,
-        error: errorMessage,
-      });
-    }
-  };
-
   // Load usage info on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     checkUsage();
   }, []);
 
@@ -260,8 +172,10 @@ function UploadJobDescription() {
         setTimeout(() => {
           console.log("Job description uploaded:", fileData);
           setUploadSuccess(true);
-          // Auto-hide success message after 5 seconds
-          setTimeout(() => setUploadSuccess(false), 5000);
+          // Redirect to Analyze Now page after successful upload
+          setTimeout(() => {
+            navigate("/analyze-now");
+          }, 1500); // Wait 1.5 seconds to show success message before redirecting
         }, 2500);
       } catch (error) {
         console.error("Error extracting job description text:", error);
@@ -339,14 +253,6 @@ function UploadJobDescription() {
                       Job description uploaded successfully! You can now analyze
                       it or upload your CV.
                     </p>
-                  </div>
-                  <div className="mt-3">
-                    <Link
-                      to="/analyze-now"
-                      className="inline-block bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded"
-                    >
-                      Go to Analysis Page
-                    </Link>
                   </div>
                 </div>
               )}
@@ -487,112 +393,11 @@ function UploadJobDescription() {
               </div>
             </div>
 
-            {/* Analysis Button */}
-            {fileData.file && !analysisData.analysisComplete && (
-              <div className="flex justify-center mb-6">
-                <button
-                  type="button"
-                  onClick={handleAnalyze}
-                  disabled={
-                    analysisData.isAnalyzing || usageInfo.remainingCalls <= 0
-                  }
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none"
-                >
-                  {analysisData.isAnalyzing
-                    ? "Analyzing..."
-                    : "Analyze JD with AI"}
-                </button>
-              </div>
-            )}
-
-            {/* Analysis Results */}
-            {analysisData.analysisComplete && analysisData.analysisResults && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold text-blue-800 mb-4">
-                  AI Analysis Results
-                </h3>
-
-                {/* Required Skills */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-blue-700 mb-2">
-                    Required Skills
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisData.analysisResults.requiredSkills?.map(
-                      (skill, index) => (
-                        <span
-                          key={index}
-                          className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* Experience Level */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-blue-700 mb-2">
-                    Experience Level Required
-                  </h4>
-                  <p className="text-sm text-blue-600">
-                    {analysisData.analysisResults.experienceLevel}
-                  </p>
-                </div>
-
-                {/* Responsibilities */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-blue-700 mb-2">
-                    Key Responsibilities
-                  </h4>
-                  <ul className="list-disc list-inside text-sm text-blue-600 space-y-1">
-                    {analysisData.analysisResults.responsibilities?.map(
-                      (responsibility, index) => (
-                        <li key={index}>{responsibility}</li>
-                      )
-                    )}
-                  </ul>
-                </div>
-
-                {/* Qualifications */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-blue-700 mb-2">
-                    Qualifications Needed
-                  </h4>
-                  <ul className="list-disc list-inside text-sm text-blue-600 space-y-1">
-                    {analysisData.analysisResults.qualifications?.map(
-                      (qualification, index) => (
-                        <li key={index}>{qualification}</li>
-                      )
-                    )}
-                  </ul>
-                </div>
-
-                {/* Summary */}
-                <div>
-                  <h4 className="text-sm font-medium text-blue-700 mb-2">
-                    Job Summary
-                  </h4>
-                  <p className="text-sm text-blue-600">
-                    {analysisData.analysisResults.summary}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Error Display */}
-            {analysisData.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-red-600">{analysisData.error}</p>
-              </div>
-            )}
-
             {/* Submit Button */}
             <div className="flex justify-center">
               <button
                 type="submit"
-                disabled={fileData.isUploading}
+                disabled={fileData.isUploading || !fileData.file}
                 className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none"
               >
                 {fileData.isUploading

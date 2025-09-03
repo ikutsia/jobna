@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../firebase/auth";
 
@@ -6,6 +6,7 @@ function SignUp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [hasPendingCV, setHasPendingCV] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -20,6 +21,12 @@ function SignUp() {
   });
 
   const [errors, setErrors] = useState({});
+
+  // Check if user has a pending CV upload
+  useEffect(() => {
+    const pendingCV = localStorage.getItem("pendingCV");
+    setHasPendingCV(!!pendingCV);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -87,8 +94,16 @@ function SignUp() {
 
         if (result.success) {
           console.log("User registered successfully:", result.user);
-          // Redirect to account page
-          navigate("/account");
+          
+          // Check if user came from UploadCV with a pending file
+          const pendingCV = localStorage.getItem("pendingCV");
+          if (pendingCV) {
+            // Redirect back to UploadCV to complete the upload
+            navigate("/upload-cv");
+          } else {
+            // Redirect to account page
+            navigate("/account");
+          }
         } else {
           setSubmitError(
             result.error || "Registration failed. Please try again."
@@ -133,10 +148,13 @@ function SignUp() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Join Jobna AI
+            {hasPendingCV ? "Complete Your Registration" : "Join Jobna AI"}
           </h1>
           <p className="text-gray-600">
-            Create your account and start your journey to landing your dream job
+            {hasPendingCV 
+              ? "Create your account to continue with your CV upload and analysis"
+              : "Create your account and start your journey to landing your dream job"
+            }
           </p>
         </div>
 
@@ -146,6 +164,20 @@ function SignUp() {
           {submitError && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {submitError}
+            </div>
+          )}
+
+          {/* Pending CV Message */}
+          {hasPendingCV && (
+            <div className="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium">
+                  You have a CV file ready to upload! Complete your registration to continue.
+                </p>
+              </div>
             </div>
           )}
 
