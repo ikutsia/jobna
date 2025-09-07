@@ -99,15 +99,27 @@ function PersonalAccount() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Personal Account
-          </h1>
-          <p className="text-gray-600">
-            Manage your profile and account settings
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {userProfile?.firstName
+                ? `${userProfile.firstName}'s Personal Account`
+                : "Personal Account"}
+            </h1>
+            <p className="text-gray-600">
+              Manage your profile and account settings
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {/* Success/Error Message */}
@@ -123,18 +135,18 @@ function PersonalAccount() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column - Profile Info */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">
                   Profile Information
                 </h2>
                 {!editing && (
                   <button
                     onClick={handleEdit}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
                   >
                     Edit Profile
                   </button>
@@ -143,7 +155,7 @@ function PersonalAccount() {
 
               {editing ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         First Name
@@ -185,7 +197,7 @@ function PersonalAccount() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Job Title
@@ -218,7 +230,7 @@ function PersonalAccount() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Country
@@ -264,7 +276,7 @@ function PersonalAccount() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         First Name
@@ -290,7 +302,7 @@ function PersonalAccount() {
                     <p className="text-gray-900">{user.email}</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Job Title
@@ -309,7 +321,7 @@ function PersonalAccount() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Country
@@ -343,9 +355,76 @@ function PersonalAccount() {
             </div>
           </div>
 
-          {/* Right Column - Account Actions */}
-          <div className="space-y-6">
-            {/* Account Status */}
+          {/* Center Column - AI Dashboard and Quick Actions */}
+          <div className="lg:col-span-6 flex flex-col space-y-6">
+            {/* AI Dashboard */}
+            <div className="bg-black rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-start gap-2 mb-4">
+                <h3 className="text-xl font-semibold text-white">
+                  Your AI Dashboard
+                </h3>
+                <p className="text-red-400 text-sm ml-1">Coming soon!</p>
+              </div>
+              <div className="border-b border-gray-600 mb-6"></div>
+              <div className="grid grid-cols-5 gap-0">
+                <div className="text-center border-r border-gray-600 pr-4">
+                  <div className="text-white font-medium text-sm mb-2">
+                    Job leads
+                  </div>
+                  <div className="text-gray-300 text-xs">10</div>
+                </div>
+                <div className="text-center border-r border-gray-600 px-4">
+                  <div className="text-white font-medium text-sm mb-2">
+                    Applied
+                  </div>
+                  <div className="text-gray-300 text-xs">9</div>
+                </div>
+                <div className="text-center border-r border-gray-600 px-4">
+                  <div className="text-white font-medium text-sm mb-2">
+                    Post Comm
+                  </div>
+                  <div className="text-gray-300 text-xs">5</div>
+                </div>
+                <div className="text-center border-r border-gray-600 px-4">
+                  <div className="text-white font-medium text-sm mb-2">
+                    Not a match
+                  </div>
+                  <div className="text-gray-300 text-xs">4</div>
+                </div>
+                <div className="text-center pl-4">
+                  <div className="text-white font-medium text-sm mb-2">
+                    Next stage
+                  </div>
+                  <div className="text-gray-300 text-xs">1</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => navigate("/upload-cv")}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex-1"
+              >
+                Upload CV
+              </button>
+              <button
+                onClick={() => navigate("/upload-job-description")}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex-1"
+              >
+                Upload Job Description
+              </button>
+              <button
+                onClick={() => navigate("/analyze-now")}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex-1"
+              >
+                Analyze Now
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column - Account Status and Account Actions Sidebar */}
+          <div className="lg:col-span-3 space-y-6">
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Account Status
@@ -386,94 +465,16 @@ function PersonalAccount() {
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Quick Actions
-              </h3>
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate("/upload-cv")}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors duration-200"
-                >
-                  <div className="flex items-center">
-                    <svg
-                      className="w-5 h-5 text-blue-600 mr-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <span className="text-gray-700">Upload CV</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate("/upload-job-description")}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors duration-200"
-                >
-                  <div className="flex items-center">
-                    <svg
-                      className="w-5 h-5 text-blue-600 mr-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z"
-                      />
-                    </svg>
-                    <span className="text-gray-700">
-                      Upload Job Description
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate("/analyze-now")}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors duration-200"
-                >
-                  <div className="flex items-center">
-                    <svg
-                      className="w-5 h-5 text-blue-600 mr-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                      />
-                    </svg>
-                    <span className="text-gray-700">Analyze Now</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
             {/* Account Actions */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Account Actions
               </h3>
               <div className="space-y-3">
-                <button
-                  onClick={handleLogout}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                >
-                  Sign Out
-                </button>
+                <p className="text-gray-500 text-sm">
+                  Additional account actions will be available here in the
+                  future.
+                </p>
               </div>
             </div>
           </div>

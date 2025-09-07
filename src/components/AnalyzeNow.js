@@ -332,37 +332,6 @@ function AnalyzeNow() {
                     </div>
                   </div>
                 )}
-
-                {/* Debug Info - Remove this in production */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-left">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Debug Info:
-                  </h4>
-                  <div className="text-xs text-gray-600 space-y-1">
-                    <p>
-                      CV Text Length:{" "}
-                      {localStorage.getItem("cvText")
-                        ? localStorage.getItem("cvText").length
-                        : 0}{" "}
-                      characters
-                    </p>
-                    <p>
-                      JD Text Length:{" "}
-                      {localStorage.getItem("jdText")
-                        ? localStorage.getItem("jdText").length
-                        : 0}{" "}
-                      characters
-                    </p>
-                    <p>
-                      CV File Info:{" "}
-                      {localStorage.getItem("uploadedCV") || "None"}
-                    </p>
-                    <p>
-                      JD File Info:{" "}
-                      {localStorage.getItem("uploadedJD") || "None"}
-                    </p>
-                  </div>
-                </div>
               </div>
 
               {/* Error Display */}

@@ -94,7 +94,7 @@ function SignUp() {
 
         if (result.success) {
           console.log("User registered successfully:", result.user);
-          
+
           // Check if user came from UploadCV with a pending file
           const pendingCV = localStorage.getItem("pendingCV");
           if (pendingCV) {
@@ -151,10 +151,9 @@ function SignUp() {
             {hasPendingCV ? "Complete Your Registration" : "Join Jobna AI"}
           </h1>
           <p className="text-gray-600">
-            {hasPendingCV 
+            {hasPendingCV
               ? "Create your account to continue with your CV upload and analysis"
-              : "Create your account and start your journey to landing your dream job"
-            }
+              : "Create your account and start your journey to landing your dream job"}
           </p>
         </div>
 
@@ -171,11 +170,22 @@ function SignUp() {
           {hasPendingCV && (
             <div className="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <p className="text-sm font-medium">
-                  You have a CV file ready to upload! Complete your registration to continue.
+                  You have a CV file ready to upload! Complete your registration
+                  to continue.
                 </p>
               </div>
             </div>
@@ -530,8 +540,8 @@ function SignUp() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 >
                   <option value="">Select year</option>
-                  {Array.from({ length: 50 }, (_, i) => {
-                    const year = new Date().getFullYear() - i;
+                  {Array.from({ length: 2014 - 1918 + 1 }, (_, i) => {
+                    const year = 2014 - i;
                     return (
                       <option key={year} value={year}>
                         {year}
