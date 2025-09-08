@@ -43,11 +43,19 @@ ABSOLUTE REQUIREMENTS - NO EXCEPTIONS:
 - Do NOT infer, assume, or add skills based on role titles
 - Do NOT add skills that "should" be there for this type of role
 - Do NOT use external knowledge about what skills are typically needed
+- Do NOT hallucinate or invent skills that are not explicitly mentioned
+- For skills match: ONLY include skills that appear with the EXACT SAME WORDS in both CV and job description
+- For missing skills: ONLY include skills explicitly mentioned in job description but NOT found in CV
+- Cross-reference EVERY word and phrase carefully - do not miss obvious matches
 
 STRICT ANALYSIS RULES:
-1. Match score (0-100) - based ONLY on explicitly stated requirements in job description
-2. Skills match - ONLY skills that appear in BOTH CV and job description text
-3. Missing skills - ONLY skills explicitly mentioned in job description but NOT in CV
+1. Match score (0-100) - Calculate based on the ratio of matching skills to total required skills:
+   - Count ALL skills explicitly mentioned in job description requirements
+   - Count skills that appear with EXACT SAME WORDS in both CV and job description
+   - Match score = (matching skills / total required skills) * 100
+   - If there are clear matches, the score should NOT be 0%
+2. Skills match - ONLY skills that appear with EXACT SAME WORDS in BOTH CV and job description text
+3. Missing skills - ONLY skills explicitly mentioned in job description but NOT found in CV
 4. Recommendations - based ONLY on explicitly stated job requirements
 5. Overall assessment - based ONLY on what is written in the job description
 6. Keyword analysis - ONLY words/phrases that appear in the job description text
@@ -279,11 +287,11 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
 
       // Validate the response structure
       if (
-        !parsedResponse.matchScore ||
-        !parsedResponse.skillsMatch ||
-        !parsedResponse.missingSkills ||
-        !parsedResponse.recommendations ||
-        !parsedResponse.keywordAnalysis
+        typeof parsedResponse.matchScore !== "number" ||
+        !Array.isArray(parsedResponse.skillsMatch) ||
+        !Array.isArray(parsedResponse.missingSkills) ||
+        !Array.isArray(parsedResponse.recommendations) ||
+        typeof parsedResponse.keywordAnalysis !== "object"
       ) {
         throw new Error("Invalid response structure from OpenAI");
       }
