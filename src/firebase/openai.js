@@ -137,8 +137,8 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
       );
     }
 
-    // Call secure Netlify function (using simplified version)
-    const response = await fetch("/.netlify/functions/analyze-match-simple", {
+    // Call secure Netlify function
+    const response = await fetch("/.netlify/functions/analyze-match", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
