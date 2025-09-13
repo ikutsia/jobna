@@ -21,6 +21,12 @@ function AnalyzeNow() {
     recommendations: [],
     assessment: "",
     keywordAnalysis: {},
+    atsAnalysis: {
+      overallScore: 0,
+      grade: "F",
+      breakdown: {},
+      recommendations: [],
+    },
   });
 
   const [usageInfo, setUsageInfo] = useState({
@@ -97,6 +103,31 @@ function AnalyzeNow() {
             "Node.js": { importance: "Medium", count: 3 },
             Docker: { importance: "High", count: 2 },
             AWS: { importance: "Medium", count: 2 },
+          },
+          atsAnalysis: {
+            overallScore: 82,
+            grade: "B",
+            breakdown: {
+              keywordMatch: { score: 75, matched: 6, total: 8 },
+              experienceMatch: { score: 90, required: 3, candidate: 4 },
+              educationMatch: { score: 80 },
+              format: { score: 85 },
+              contentQuality: { score: 75 },
+            },
+            recommendations: [
+              {
+                type: "important",
+                category: "Keywords",
+                message: "Add 2 more required keywords to improve ATS score",
+                impact: "High",
+              },
+              {
+                type: "content",
+                category: "Content",
+                message: "Add more quantified achievements and action verbs",
+                impact: "Medium",
+              },
+            ],
           },
         });
 
@@ -192,6 +223,22 @@ function AnalyzeNow() {
     if (score >= 90) return "bg-green-100";
     if (score >= 80) return "bg-blue-100";
     if (score >= 70) return "bg-yellow-100";
+    return "bg-red-100";
+  };
+
+  const getATSScoreColor = (score) => {
+    if (score >= 90) return "text-green-600";
+    if (score >= 80) return "text-blue-600";
+    if (score >= 70) return "text-yellow-600";
+    if (score >= 60) return "text-orange-600";
+    return "text-red-600";
+  };
+
+  const getATSScoreBgColor = (score) => {
+    if (score >= 90) return "bg-green-100";
+    if (score >= 80) return "bg-blue-100";
+    if (score >= 70) return "bg-yellow-100";
+    if (score >= 60) return "bg-orange-100";
     return "bg-red-100";
   };
 
@@ -416,27 +463,55 @@ function AnalyzeNow() {
                 Analysis Results
               </h2>
 
-              <div className="text-center mb-8">
-                <div
-                  className={`inline-flex items-center justify-center w-32 h-32 rounded-full ${getScoreBgColor(
-                    analysisResults.matchScore
-                  )} mb-4`}
-                >
-                  <span
-                    className={`text-4xl font-bold ${getScoreColor(
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Traditional Match Score */}
+                <div className="text-center">
+                  <div
+                    className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getScoreBgColor(
                       analysisResults.matchScore
-                    )}`}
+                    )} mb-4`}
                   >
-                    {analysisResults.matchScore}%
-                  </span>
+                    <span
+                      className={`text-2xl font-bold ${getScoreColor(
+                        analysisResults.matchScore
+                      )}`}
+                    >
+                      {analysisResults.matchScore}%
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Match Score
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    CV matches {analysisResults.matchScore}% of job requirements
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Match Score
-                </h3>
-                <p className="text-gray-600">
-                  Your CV matches {analysisResults.matchScore}% of the job
-                  requirements
-                </p>
+
+                {/* ATS Score */}
+                <div className="text-center">
+                  <div
+                    className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getATSScoreBgColor(
+                      analysisResults.atsAnalysis.overallScore
+                    )} mb-4`}
+                  >
+                    <span
+                      className={`text-2xl font-bold ${getATSScoreColor(
+                        analysisResults.atsAnalysis.overallScore
+                      )}`}
+                    >
+                      {analysisResults.atsAnalysis.overallScore}%
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    ATS Score
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Grade:{" "}
+                    <span className="font-bold text-lg">
+                      {analysisResults.atsAnalysis.grade}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -635,6 +710,326 @@ function AnalyzeNow() {
               </div>
             </div>
 
+            {/* ATS Analysis Breakdown */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                <svg
+                  className="w-6 h-6 text-purple-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                ATS Score Breakdown
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {/* Keyword Match */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">
+                      Keyword Match
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${getATSScoreColor(
+                        analysisResults.atsAnalysis.breakdown.keywordMatch
+                          ?.score || 0
+                      )}`}
+                    >
+                      {analysisResults.atsAnalysis.breakdown.keywordMatch
+                        ?.score || 0}
+                      %
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {analysisResults.atsAnalysis.breakdown.keywordMatch
+                      ?.matched || 0}{" "}
+                    of{" "}
+                    {analysisResults.atsAnalysis.breakdown.keywordMatch
+                      ?.total || 0}{" "}
+                    keywords found
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className={`h-2 rounded-full ${getATSScoreBgColor(
+                        analysisResults.atsAnalysis.breakdown.keywordMatch
+                          ?.score || 0
+                      )
+                        .replace("bg-", "bg-")
+                        .replace("-100", "-500")}`}
+                      style={{
+                        width: `${
+                          analysisResults.atsAnalysis.breakdown.keywordMatch
+                            ?.score || 0
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Experience Match */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">
+                      Experience
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${getATSScoreColor(
+                        analysisResults.atsAnalysis.breakdown.experienceMatch
+                          ?.score || 0
+                      )}`}
+                    >
+                      {analysisResults.atsAnalysis.breakdown.experienceMatch
+                        ?.score || 0}
+                      %
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {analysisResults.atsAnalysis.breakdown.experienceMatch
+                      ?.candidate || 0}{" "}
+                    years vs{" "}
+                    {analysisResults.atsAnalysis.breakdown.experienceMatch
+                      ?.required || 0}{" "}
+                    required
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className={`h-2 rounded-full ${getATSScoreBgColor(
+                        analysisResults.atsAnalysis.breakdown.experienceMatch
+                          ?.score || 0
+                      )
+                        .replace("bg-", "bg-")
+                        .replace("-100", "-500")}`}
+                      style={{
+                        width: `${
+                          analysisResults.atsAnalysis.breakdown.experienceMatch
+                            ?.score || 0
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Education Match */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">Education</span>
+                    <span
+                      className={`text-lg font-bold ${getATSScoreColor(
+                        analysisResults.atsAnalysis.breakdown.educationMatch
+                          ?.score || 0
+                      )}`}
+                    >
+                      {analysisResults.atsAnalysis.breakdown.educationMatch
+                        ?.score || 0}
+                      %
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Degree and certification match
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className={`h-2 rounded-full ${getATSScoreBgColor(
+                        analysisResults.atsAnalysis.breakdown.educationMatch
+                          ?.score || 0
+                      )
+                        .replace("bg-", "bg-")
+                        .replace("-100", "-500")}`}
+                      style={{
+                        width: `${
+                          analysisResults.atsAnalysis.breakdown.educationMatch
+                            ?.score || 0
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Format Score */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">Format</span>
+                    <span
+                      className={`text-lg font-bold ${getATSScoreColor(
+                        analysisResults.atsAnalysis.breakdown.format?.score || 0
+                      )}`}
+                    >
+                      {analysisResults.atsAnalysis.breakdown.format?.score || 0}
+                      %
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    ATS-friendly structure
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className={`h-2 rounded-full ${getATSScoreBgColor(
+                        analysisResults.atsAnalysis.breakdown.format?.score || 0
+                      )
+                        .replace("bg-", "bg-")
+                        .replace("-100", "-500")}`}
+                      style={{
+                        width: `${
+                          analysisResults.atsAnalysis.breakdown.format?.score ||
+                          0
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Content Quality */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">
+                      Content Quality
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${getATSScoreColor(
+                        analysisResults.atsAnalysis.breakdown.contentQuality
+                          ?.score || 0
+                      )}`}
+                    >
+                      {analysisResults.atsAnalysis.breakdown.contentQuality
+                        ?.score || 0}
+                      %
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Achievements and action verbs
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className={`h-2 rounded-full ${getATSScoreBgColor(
+                        analysisResults.atsAnalysis.breakdown.contentQuality
+                          ?.score || 0
+                      )
+                        .replace("bg-", "bg-")
+                        .replace("-100", "-500")}`}
+                      style={{
+                        width: `${
+                          analysisResults.atsAnalysis.breakdown.contentQuality
+                            ?.score || 0
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ATS Recommendations */}
+              {analysisResults.atsAnalysis.recommendations &&
+                analysisResults.atsAnalysis.recommendations.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      ATS Optimization Recommendations
+                    </h4>
+                    <div className="space-y-3">
+                      {analysisResults.atsAnalysis.recommendations.map(
+                        (rec, index) => (
+                          <div
+                            key={index}
+                            className={`p-4 rounded-lg border-l-4 ${
+                              rec.type === "critical"
+                                ? "bg-red-50 border-red-400"
+                                : rec.type === "important"
+                                ? "bg-yellow-50 border-yellow-400"
+                                : "bg-blue-50 border-blue-400"
+                            }`}
+                          >
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                {rec.type === "critical" ? (
+                                  <svg
+                                    className="w-5 h-5 text-red-400"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                ) : rec.type === "important" ? (
+                                  <svg
+                                    className="w-5 h-5 text-yellow-400"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="w-5 h-5 text-blue-400"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="ml-3">
+                                <div className="flex items-center">
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      rec.type === "critical"
+                                        ? "text-red-800"
+                                        : rec.type === "important"
+                                        ? "text-yellow-800"
+                                        : "text-blue-800"
+                                    }`}
+                                  >
+                                    {rec.category}
+                                  </span>
+                                  <span
+                                    className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                                      rec.impact === "High"
+                                        ? "bg-red-100 text-red-800"
+                                        : rec.impact === "Medium"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-green-100 text-green-800"
+                                    }`}
+                                  >
+                                    {rec.impact} Impact
+                                  </span>
+                                </div>
+                                <p
+                                  className={`mt-1 text-sm ${
+                                    rec.type === "critical"
+                                      ? "text-red-700"
+                                      : rec.type === "important"
+                                      ? "text-yellow-700"
+                                      : "text-blue-700"
+                                  }`}
+                                >
+                                  {rec.message}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+            </div>
+
             {/* New Analysis Button */}
             <div className="flex justify-center">
               <button
@@ -651,6 +1046,12 @@ function AnalyzeNow() {
                     recommendations: [],
                     assessment: "",
                     keywordAnalysis: {},
+                    atsAnalysis: {
+                      overallScore: 0,
+                      grade: "F",
+                      breakdown: {},
+                      recommendations: [],
+                    },
                   });
                 }}
                 className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
