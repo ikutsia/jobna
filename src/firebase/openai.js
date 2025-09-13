@@ -1,12 +1,8 @@
-import OpenAI from "openai";
 import { doc, getDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "./config";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true, // Note: In production, use backend proxy
-});
+// Note: OpenAI API calls now go through secure Netlify functions
+// API key is no longer exposed in the browser
 
 // Free tier limits
 const FREE_TIER_LIMITS = {
@@ -127,7 +123,7 @@ export const updateUserUsage = async (userId, tokensUsed) => {
   }
 };
 
-// Analyze CV using OpenAI
+// Analyze CV using secure Netlify function
 export const analyzeCV = async (cvText, userId) => {
   try {
     // Check usage limits
@@ -138,52 +134,35 @@ export const analyzeCV = async (cvText, userId) => {
       );
     }
 
-    // Use full CV text for analysis (no truncation)
-    const truncatedCV = cvText;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a professional HR analyst. Provide concise, actionable feedback.",
-        },
-        {
-          role: "user",
-          content: `${ANALYSIS_PROMPTS.cvAnalysis}\n\nCV Content:\n${truncatedCV}`,
-        },
-      ],
-      max_tokens: FREE_TIER_LIMITS.maxTokensPerCall,
-      temperature: 0.3,
+    // Call secure Netlify function
+    const response = await fetch("/.netlify/functions/analyze-cv", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cvText,
+        userId,
+      }),
     });
 
-    const response = completion.choices[0].message.content;
-    const tokensUsed = completion.usage.total_tokens;
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || "Analysis failed");
+    }
 
     // Update usage
-    await updateUserUsage(userId, tokensUsed);
+    await updateUserUsage(userId, result.tokensUsed);
 
-    // Parse JSON response
-    try {
-      return JSON.parse(response);
-    } catch (parseError) {
-      // If JSON parsing fails, return formatted text
-      return {
-        skills: [],
-        experienceLevel: "Unknown",
-        strengths: ["Analysis completed"],
-        improvements: ["Format could be improved"],
-        summary: response,
-      };
-    }
+    return result.data;
   } catch (error) {
     console.error("CV Analysis error:", error);
     throw error;
   }
 };
 
-// Analyze Job Description using OpenAI
+// Analyze Job Description using secure Netlify function
 export const analyzeJD = async (jdText, userId) => {
   try {
     // Check usage limits
@@ -194,51 +173,35 @@ export const analyzeJD = async (jdText, userId) => {
       );
     }
 
-    // Use full JD text for analysis (no truncation)
-    const truncatedJD = jdText;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a professional HR analyst. Provide concise, actionable feedback.",
-        },
-        {
-          role: "user",
-          content: `${ANALYSIS_PROMPTS.jdAnalysis}\n\nJob Description:\n${truncatedJD}`,
-        },
-      ],
-      max_tokens: FREE_TIER_LIMITS.maxTokensPerCall,
-      temperature: 0.3,
+    // Call secure Netlify function
+    const response = await fetch("/.netlify/functions/analyze-jd", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jdText,
+        userId,
+      }),
     });
 
-    const response = completion.choices[0].message.content;
-    const tokensUsed = completion.usage.total_tokens;
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || "Analysis failed");
+    }
 
     // Update usage
-    await updateUserUsage(userId, tokensUsed);
+    await updateUserUsage(userId, result.tokensUsed);
 
-    // Parse JSON response
-    try {
-      return JSON.parse(response);
-    } catch (parseError) {
-      return {
-        requiredSkills: [],
-        experienceLevel: "Unknown",
-        responsibilities: ["Analysis completed"],
-        qualifications: ["Format could be improved"],
-        summary: response,
-      };
-    }
+    return result.data;
   } catch (error) {
     console.error("JD Analysis error:", error);
     throw error;
   }
 };
 
-// Analyze CV-JD match using OpenAI
+// Analyze CV-JD match using secure Netlify function
 export const analyzeMatch = async (cvText, jdText, userId) => {
   try {
     // Check usage limits
@@ -249,83 +212,29 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
       );
     }
 
-    // Use full text for analysis (no truncation)
-    const truncatedCV = cvText;
-    const truncatedJD = jdText;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a professional HR analyst specializing in CV-job matching analysis. You MUST respond with ONLY valid JSON. No additional text, explanations, or formatting outside the JSON structure. The response must be parseable by JSON.parse().\n\nABSOLUTE REQUIREMENTS: IGNORE job titles, company names, and your general knowledge. ONLY analyze what is explicitly written in the job description text. Do NOT infer, assume, or add skills based on role titles or external knowledge. Focus strictly on literal text content only.",
-        },
-        {
-          role: "user",
-          content: `${ANALYSIS_PROMPTS.matchAnalysis}\n\nCV Content:\n${truncatedCV}\n\nJob Description:\n${truncatedJD}`,
-        },
-      ],
-      max_tokens: FREE_TIER_LIMITS.maxTokensPerCall,
-      temperature: 0.3,
+    // Call secure Netlify function
+    const response = await fetch("/.netlify/functions/analyze-match", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cvText,
+        jdText,
+        userId,
+      }),
     });
 
-    const response = completion.choices[0].message.content;
-    const tokensUsed = completion.usage.total_tokens;
+    const result = await response.json();
 
-    // Log the raw response for debugging
-    console.log("OpenAI Raw Response:", response);
-    console.log("Response type:", typeof response);
-    console.log("Response length:", response.length);
+    if (!result.success) {
+      throw new Error(result.error || "Analysis failed");
+    }
 
     // Update usage
-    await updateUserUsage(userId, tokensUsed);
+    await updateUserUsage(userId, result.tokensUsed);
 
-    // Parse JSON response
-    try {
-      const parsedResponse = JSON.parse(response);
-
-      // Validate the response structure
-      if (
-        typeof parsedResponse.matchScore !== "number" ||
-        !Array.isArray(parsedResponse.skillsMatch) ||
-        !Array.isArray(parsedResponse.missingSkills) ||
-        !Array.isArray(parsedResponse.recommendations) ||
-        typeof parsedResponse.keywordAnalysis !== "object"
-      ) {
-        throw new Error("Invalid response structure from OpenAI");
-      }
-
-      return parsedResponse;
-    } catch (parseError) {
-      console.error("JSON parsing error:", parseError);
-      console.error("Raw OpenAI response:", response);
-
-      // Try to extract useful information from the response even if it's not valid JSON
-      let extractedData = {
-        matchScore: 50,
-        skillsMatch: [],
-        missingSkills: [],
-        recommendations: [],
-        assessment:
-          "Analysis completed but response format was unexpected. Please try again.",
-        keywordAnalysis: {},
-      };
-
-      // Try to find a match score in the response
-      const scoreMatch = response.match(/(\d+)%?/);
-      if (scoreMatch) {
-        extractedData.matchScore = parseInt(scoreMatch[1]);
-      }
-
-      // Try to find skills mentioned
-      const skillsMatch = response.match(/skills?[:\s]+([^.]+)/i);
-      if (skillsMatch) {
-        extractedData.skillsMatch = [skillsMatch[1].trim()];
-      }
-
-      return extractedData;
-    }
+    return result.data;
   } catch (error) {
     console.error("Match Analysis error:", error);
     throw error;

@@ -1,0 +1,12 @@
+{
+  "name": "jobna-netlify-functions",
+  "version": "1.0.0",
+  "description": "Secure serverless functions for Jobna AI",
+  "main": "index.js",
+  "dependencies": {
+    "openai": "^5.17.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
