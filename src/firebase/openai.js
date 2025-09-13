@@ -11,8 +11,8 @@ const FREE_TIER_LIMITS = {
   costPer1kTokens: 0.002, // GPT-3.5-turbo pricing
 };
 
-// Analysis prompts for different types
-const ANALYSIS_PROMPTS = {
+// Analysis prompts for different types (unused - handled by Netlify functions)
+// const ANALYSIS_PROMPTS = {
   cvAnalysis: `Analyze this CV/resume and provide:
 1. Key skills identified (max 8 skills)
 2. Experience level assessment
@@ -86,7 +86,7 @@ Respond with ONLY this JSON structure:
     "keyword2": {"importance": "High/Medium/Low", "count": [number > 0]}
   }
 }`,
-};
+// };
 
 // Check user's monthly usage
 export const checkUserUsage = async (userId) => {
