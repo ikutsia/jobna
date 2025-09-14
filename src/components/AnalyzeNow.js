@@ -4,6 +4,7 @@ import {
   analyzeMatch,
   getRemainingCalls,
   getCostEstimate,
+  testNetlifyFunctions,
 } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
 
@@ -440,6 +441,13 @@ function AnalyzeNow() {
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none text-lg"
                 >
                   {analysisData.isAnalyzing ? "Analyzing..." : "Demo Mode"}
+                </button>
+
+                <button
+                  onClick={testNetlifyFunctions}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl text-lg"
+                >
+                  🧪 Debug Functions
                 </button>
               </div>
 

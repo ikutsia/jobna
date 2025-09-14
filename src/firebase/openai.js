@@ -152,7 +152,15 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
     }
 
     // Call secure Netlify function
-    const response = await fetch("/.netlify/functions/analyze-match", {
+    const functionUrl = "/.netlify/functions/analyze-match";
+    console.log("🔍 DEBUG: Attempting to call function:", functionUrl);
+    console.log("🔍 DEBUG: Current location:", window.location.href);
+    console.log(
+      "🔍 DEBUG: Full function URL:",
+      window.location.origin + functionUrl
+    );
+
+    const response = await fetch(functionUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -164,10 +172,16 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
       }),
     });
 
+    console.log("🔍 DEBUG: Response status:", response.status);
+    console.log("🔍 DEBUG: Response headers:", [...response.headers.entries()]);
+    console.log("🔍 DEBUG: Response URL:", response.url);
+
     // Check if the response is ok before parsing JSON
     if (!response.ok) {
+      const responseText = await response.text();
+      console.log("🔍 DEBUG: Error response body:", responseText);
       throw new Error(
-        `Function call failed with status: ${response.status} ${response.statusText}`
+        `Function call failed with status: ${response.status} ${response.statusText}. Response: ${responseText}`
       );
     }
 
@@ -184,6 +198,36 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
   } catch (error) {
     console.error("Match Analysis error:", error);
     throw error;
+  }
+};
+
+// DEBUG: Test function to check if Netlify functions are working
+export const testNetlifyFunctions = async () => {
+  console.log("🧪 DEBUG: Testing Netlify functions...");
+
+  const testUrls = [
+    "/.netlify/functions/test",
+    "/.netlify/functions/analyze-match",
+    "/.netlify/functions/analyze-cv",
+    "/.netlify/functions/analyze-jd",
+  ];
+
+  for (const url of testUrls) {
+    try {
+      console.log(`🧪 Testing: ${url}`);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log(`✅ ${url}: Status ${response.status}`);
+      const text = await response.text();
+      console.log(`📄 Response: ${text.substring(0, 200)}...`);
+    } catch (error) {
+      console.log(`❌ ${url}: Error - ${error.message}`);
+    }
   }
 };
 
