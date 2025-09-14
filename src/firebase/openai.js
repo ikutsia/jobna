@@ -71,6 +71,13 @@ export const analyzeCV = async (cvText, userId) => {
       }),
     });
 
+    // Check if the response is ok before parsing JSON
+    if (!response.ok) {
+      throw new Error(
+        `Function call failed with status: ${response.status} ${response.statusText}`
+      );
+    }
+
     const result = await response.json();
 
     if (!result.success) {
@@ -109,6 +116,13 @@ export const analyzeJD = async (jdText, userId) => {
         userId,
       }),
     });
+
+    // Check if the response is ok before parsing JSON
+    if (!response.ok) {
+      throw new Error(
+        `Function call failed with status: ${response.status} ${response.statusText}`
+      );
+    }
 
     const result = await response.json();
 
@@ -149,6 +163,13 @@ export const analyzeMatch = async (cvText, jdText, userId) => {
         userId,
       }),
     });
+
+    // Check if the response is ok before parsing JSON
+    if (!response.ok) {
+      throw new Error(
+        `Function call failed with status: ${response.status} ${response.statusText}`
+      );
+    }
 
     const result = await response.json();
 
