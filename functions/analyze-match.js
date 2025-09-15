@@ -69,6 +69,17 @@ exports.handler = async (event, context) => {
         /\b(sql|nosql|machine learning|ai|artificial intelligence|data science|analytics|tableau|power bi)\b/g,
         // Web technologies
         /\b(html|css|sass|scss|bootstrap|tailwind|responsive design|rest api|graphql|microservices)\b/g,
+        // Business and procurement terms
+        /\b(procurement|sourcing|strategic sourcing|category management|supplier management|vendor management)\b/g,
+        /\b(spend analysis|market analysis|benchmarking|contract negotiation|stakeholder management)\b/g,
+        /\b(process improvement|change management|project management|program management|risk management)\b/g,
+        /\b(marketing|brand marketing|digital marketing|marketing procurement|marketing campaigns)\b/g,
+        /\b(analytical|analytics|data analysis|data-driven|reporting|presentation|communication)\b/g,
+        /\b(leadership|team management|cross-functional|international|global|multinational)\b/g,
+        /\b(optimization|efficiency|cost reduction|savings|roi|kpi|performance|metrics)\b/g,
+        // Software and systems
+        /\b(sap|ariba|oracle|salesforce|microsoft office|excel|powerpoint|word|google workspace)\b/g,
+        /\b(erp|crm|scm|wms|tms|bi|dashboard|reporting tools|project management software)\b/g,
       ];
 
       // Soft skills patterns
@@ -146,7 +157,192 @@ exports.handler = async (event, context) => {
       return keywords;
     };
 
-    // Calculate keyword match score
+    // Enhanced keyword matching with synonyms and semantic variations
+    const getKeywordSynonyms = (keyword) => {
+      const synonymMap = {
+        // Analytical skills
+        analytical: [
+          "analysis",
+          "analytics",
+          "data analysis",
+          "analytical skills",
+          "analytical thinking",
+        ],
+        analysis: [
+          "analytical",
+          "analytics",
+          "data analysis",
+          "spend analysis",
+          "market analysis",
+        ],
+        data: [
+          "data analysis",
+          "data-driven",
+          "data handling",
+          "data processing",
+        ],
+
+        // Management terms
+        management: [
+          "managing",
+          "managed",
+          "manager",
+          "leadership",
+          "leading",
+          "led",
+        ],
+        project: [
+          "project management",
+          "project delivery",
+          "project coordination",
+          "program management",
+        ],
+        stakeholder: [
+          "stakeholders",
+          "stakeholder engagement",
+          "stakeholder management",
+          "business partners",
+        ],
+
+        // Procurement terms
+        procurement: [
+          "procurement activities",
+          "procurement processes",
+          "procurement systems",
+        ],
+        sourcing: [
+          "strategic sourcing",
+          "sourcing activities",
+          "sourcing strategies",
+        ],
+        supplier: [
+          "suppliers",
+          "supplier management",
+          "supplier portfolio",
+          "vendor",
+          "vendors",
+          "partners",
+        ],
+        category: ["category management", "category strategies", "categories"],
+
+        // Marketing terms
+        marketing: [
+          "marketing procurement",
+          "marketing activities",
+          "marketing campaigns",
+          "brand marketing",
+        ],
+
+        // Process terms
+        process: [
+          "processes",
+          "process improvement",
+          "process optimization",
+          "workflow",
+        ],
+        optimization: [
+          "optimize",
+          "optimizing",
+          "optimized",
+          "improvement",
+          "improving",
+        ],
+
+        // Communication terms
+        communication: [
+          "communicating",
+          "communicated",
+          "verbal communication",
+          "written communication",
+        ],
+        presentation: [
+          "presentations",
+          "presenting",
+          "presented",
+          "reporting",
+          "reports",
+        ],
+
+        // Technical terms
+        technical: ["technology", "technologies", "tech", "systems", "tools"],
+        software: ["systems", "tools", "platforms", "applications"],
+
+        // Experience terms
+        experience: [
+          "experienced",
+          "experiences",
+          "background",
+          "expertise",
+          "knowledge",
+        ],
+        skills: ["skill", "capabilities", "competencies", "abilities"],
+
+        // Leadership terms
+        leadership: ["leading", "led", "leader", "managing", "management"],
+        team: ["teams", "teamwork", "collaboration", "collaborative"],
+
+        // Change terms
+        change: [
+          "changes",
+          "changing",
+          "transformation",
+          "transforming",
+          "improvement",
+        ],
+        improvement: [
+          "improve",
+          "improving",
+          "improved",
+          "enhancement",
+          "enhancing",
+        ],
+
+        // International terms
+        international: ["global", "multinational", "cross-border", "worldwide"],
+        "cross-functional": [
+          "cross functional",
+          "interdisciplinary",
+          "multi-disciplinary",
+        ],
+      };
+
+      return synonymMap[keyword.toLowerCase()] || [keyword];
+    };
+
+    // Check if keyword or its synonyms exist in text
+    const findKeywordMatches = (keyword, text) => {
+      const synonyms = getKeywordSynonyms(keyword);
+      let totalMatches = 0;
+      const foundVariations = [];
+
+      synonyms.forEach((synonym) => {
+        // Create flexible regex that handles compound terms
+        const escapedSynonym = synonym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        // For compound terms, use more flexible matching
+        if (synonym.includes(" ")) {
+          // For multi-word terms, match with word boundaries
+          const regex = new RegExp(`\\b${escapedSynonym}\\b`, "gi");
+          const matches = text.match(regex);
+          if (matches) {
+            totalMatches += matches.length;
+            foundVariations.push(synonym);
+          }
+        } else {
+          // For single words, match with word boundaries
+          const regex = new RegExp(`\\b${escapedSynonym}\\b`, "gi");
+          const matches = text.match(regex);
+          if (matches) {
+            totalMatches += matches.length;
+            foundVariations.push(synonym);
+          }
+        }
+      });
+
+      return { count: totalMatches, variations: foundVariations };
+    };
+
+    // Calculate keyword match score with enhanced matching
     const calculateKeywordMatchScore = (cvText, jobKeywords) => {
       const allKeywords = [...jobKeywords.required, ...jobKeywords.preferred];
       const totalKeywords = allKeywords.length;
@@ -159,12 +355,8 @@ exports.handler = async (event, context) => {
       const details = [];
 
       allKeywords.forEach((keyword) => {
-        const regex = new RegExp(
-          `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
-          "g"
-        );
-        const matches = cvText.match(regex);
-        const count = matches ? matches.length : 0;
+        const matchResult = findKeywordMatches(keyword, cvText);
+        const count = matchResult.count;
 
         if (count > 0) {
           matchedKeywords++;
@@ -172,12 +364,14 @@ exports.handler = async (event, context) => {
             keyword,
             count,
             found: true,
+            variations: matchResult.variations,
           });
         } else {
           details.push({
             keyword,
             count: 0,
             found: false,
+            variations: [],
           });
         }
       });
