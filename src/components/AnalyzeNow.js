@@ -4,7 +4,6 @@ import {
   analyzeMatch,
   getRemainingCalls,
   getCostEstimate,
-  testNetlifyFunctions,
 } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
 
@@ -62,84 +61,6 @@ function AnalyzeNow() {
         isLoading: false,
       });
     }
-  };
-
-  // Demo mode for testing without OpenAI API
-  const handleDemoMode = () => {
-    setAnalysisData((prev) => ({
-      ...prev,
-      isAnalyzing: true,
-      error: null,
-    }));
-
-    // Simulate analysis progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 20;
-      setAnalysisData((prev) => ({
-        ...prev,
-        analysisProgress: progress,
-      }));
-
-      if (progress >= 100) {
-        clearInterval(interval);
-
-        // Set demo results with proper structure
-        setAnalysisResults({
-          matchScore: 78,
-          skillsMatch: ["JavaScript", "React", "Node.js", "Git", "Agile"],
-          missingSkills: ["Docker", "Kubernetes", "AWS"],
-          recommendations: [
-            "Add Docker experience to your CV",
-            "Include cloud platform experience (AWS/Azure/GCP)",
-            "Highlight any containerization knowledge",
-            "Add Kubernetes or similar orchestration tools",
-            "Consider getting cloud certifications",
-          ],
-          assessment:
-            "Good technical foundation with modern web development skills, but missing cloud and containerization experience that's increasingly important for DevOps roles.",
-          keywordAnalysis: {
-            JavaScript: { importance: "High", count: 5 },
-            React: { importance: "High", count: 4 },
-            "Node.js": { importance: "Medium", count: 3 },
-            Docker: { importance: "High", count: 2 },
-            AWS: { importance: "Medium", count: 2 },
-          },
-          atsAnalysis: {
-            overallScore: 82,
-            grade: "B",
-            breakdown: {
-              keywordMatch: { score: 75, matched: 6, total: 8 },
-              experienceMatch: { score: 90, required: 3, candidate: 4 },
-              educationMatch: { score: 80 },
-              format: { score: 85 },
-              contentQuality: { score: 75 },
-            },
-            recommendations: [
-              {
-                type: "important",
-                category: "Keywords",
-                message: "Add 2 more required keywords to improve ATS score",
-                impact: "High",
-              },
-              {
-                type: "content",
-                category: "Content",
-                message: "Add more quantified achievements and action verbs",
-                impact: "Medium",
-              },
-            ],
-          },
-        });
-
-        setAnalysisData({
-          isAnalyzing: false,
-          analysisComplete: true,
-          analysisProgress: 100,
-          error: null,
-        });
-      }
-    }, 500);
   };
 
   // Real analysis with OpenAI
@@ -422,7 +343,7 @@ function AnalyzeNow() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex justify-center">
                 <button
                   onClick={handleAnalyze}
                   disabled={
@@ -434,31 +355,6 @@ function AnalyzeNow() {
                 >
                   {analysisData.isAnalyzing ? "Analyzing..." : "Start Analysis"}
                 </button>
-
-                <button
-                  onClick={handleDemoMode}
-                  disabled={analysisData.isAnalyzing}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none text-lg"
-                >
-                  {analysisData.isAnalyzing ? "Analyzing..." : "Demo Mode"}
-                </button>
-
-                <button
-                  onClick={testNetlifyFunctions}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl text-lg"
-                >
-                  🧪 Debug Functions
-                </button>
-              </div>
-
-              {/* Demo Mode Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Demo Mode:</strong> Try the demo to see sample
-                  analysis results without using OpenAI API calls. This is
-                  useful when you've exceeded your API quota or want to test the
-                  interface.
-                </p>
               </div>
             </div>
           </div>
