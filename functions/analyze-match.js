@@ -386,9 +386,92 @@ exports.handler = async (event, context) => {
       };
     };
 
+    // Calculate experience match score
+    const calculateExperienceMatchScore = (cvText, jdText) => {
+      // Extract years of experience from job description
+      const jdExperienceMatch = jdText.match(
+        /(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)/i
+      );
+      const requiredYears = jdExperienceMatch
+        ? parseInt(jdExperienceMatch[1])
+        : 0;
+
+      // Extract years of experience from resume - look for various patterns
+      const cvExperiencePatterns = [
+        /(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)/gi,
+        /(\d+)\+?\s*years?\s*(of\s*)?(international|professional|relevant)/gi,
+        /(\d+)\+?\s*years?\s*(in\s*)?(procurement|management|sourcing)/gi,
+      ];
+
+      let candidateYears = 0;
+      let foundExperience = "";
+
+      // Try each pattern to find experience
+      for (const pattern of cvExperiencePatterns) {
+        const matches = cvText.match(pattern);
+        if (matches) {
+          // Find the highest number mentioned
+          const years = matches.map((match) => {
+            const yearMatch = match.match(/(\d+)/);
+            return yearMatch ? parseInt(yearMatch[1]) : 0;
+          });
+          const maxYears = Math.max(...years);
+          if (maxYears > candidateYears) {
+            candidateYears = maxYears;
+            foundExperience = matches[0];
+          }
+        }
+      }
+
+      // If no explicit years found, try to calculate from date ranges
+      if (candidateYears === 0) {
+        const datePattern = /(\d{4})\s*[–-]\s*(\d{4}|\d{2})/g;
+        const dateMatches = cvText.match(datePattern);
+        if (dateMatches) {
+          const currentYear = new Date().getFullYear();
+          const years = dateMatches.map((match) => {
+            const parts = match.match(/(\d{4})\s*[–-]\s*(\d{4}|\d{2})/);
+            if (parts) {
+              const startYear = parseInt(parts[1]);
+              const endYear =
+                parts[2].length === 2
+                  ? parseInt(parts[2]) > 50
+                    ? 1900 + parseInt(parts[2])
+                    : 2000 + parseInt(parts[2])
+                  : parseInt(parts[2]);
+              return endYear - startYear;
+            }
+            return 0;
+          });
+          candidateYears = Math.max(...years);
+        }
+      }
+
+      let score = 0;
+      if (requiredYears === 0) {
+        score = 100; // No specific requirement
+      } else if (candidateYears >= requiredYears) {
+        score = 100; // Meets or exceeds requirement
+      } else if (candidateYears > 0) {
+        score = Math.round((candidateYears / requiredYears) * 100);
+      }
+
+      return {
+        score,
+        required: requiredYears,
+        candidate: candidateYears,
+        match: candidateYears >= requiredYears,
+        foundExperience: foundExperience || "Calculated from date ranges",
+      };
+    };
+
     // Extract keywords from job description
     const jobKeywords = extractJobKeywords(jdText);
     const keywordScore = calculateKeywordMatchScore(cvTextLower, jobKeywords);
+    const experienceScore = calculateExperienceMatchScore(
+      cvTextLower,
+      jdTextLower
+    );
     const overallScore = Math.min(keywordScore.score + 30, 100);
 
     // Calculate ATS analysis
@@ -408,7 +491,10 @@ exports.handler = async (event, context) => {
           matched: keywordScore.matched,
           total: keywordScore.total,
         },
-        experienceMatch: { score: 75, required: 3, candidate: 2 },
+        experienceMatch: calculateExperienceMatchScore(
+          cvTextLower,
+          jdTextLower
+        ),
         educationMatch: { score: 80 },
         format: { score: 85 },
         contentQuality: { score: 70 },
