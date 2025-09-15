@@ -42,67 +42,160 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Simple ATS analysis
+    // Dynamic ATS analysis using job description extraction
     const cvTextLower = cvText.toLowerCase();
     const jdTextLower = jdText.toLowerCase();
 
-    const technicalKeywords = [
-      "javascript",
-      "python",
-      "java",
-      "react",
-      "angular",
-      "vue",
-      "node",
-      "sql",
-      "aws",
-      "git",
-      "html",
-      "css",
-      "typescript",
-      "mongodb",
-      "express",
-      "docker",
-      "kubernetes",
-      "php",
-      "ruby",
-      "go",
-      "rust",
-      "swift",
-      "kotlin",
-      "dart",
-      "django",
-      "flask",
-      "spring",
-      "laravel",
-      "rails",
-      "mysql",
-      "postgresql",
-      "redis",
-      "sqlite",
-      "oracle",
-      "elasticsearch",
-      "azure",
-      "gcp",
-      "github",
-      "gitlab",
-      "jenkins",
-      "devops",
-      "agile",
-      "scrum",
-      "jira",
-      "confluence",
-    ];
+    // Extract keywords from job description dynamically
+    const extractJobKeywords = (jdText) => {
+      if (!jdText)
+        return { required: [], preferred: [], technical: [], soft: [] };
 
-    const foundKeywords = technicalKeywords.filter(
-      (keyword) =>
-        jdTextLower.includes(keyword) && cvTextLower.includes(keyword)
-    );
+      const text = jdText.toLowerCase();
 
-    const keywordScore = Math.round(
-      (foundKeywords.length / technicalKeywords.length) * 100
-    );
-    const overallScore = Math.min(keywordScore + 30, 100);
+      // Common technical skills patterns
+      const technicalPatterns = [
+        // Programming languages
+        /\b(javascript|js|python|java|c\+\+|c#|php|ruby|go|rust|swift|kotlin|typescript|dart)\b/g,
+        // Frameworks and libraries
+        /\b(react|angular|vue|node\.?js|express|django|flask|spring|laravel|rails|asp\.net|jquery)\b/g,
+        // Databases
+        /\b(mysql|postgresql|mongodb|redis|sqlite|oracle|sql server|dynamodb|elasticsearch)\b/g,
+        // Cloud platforms
+        /\b(aws|azure|gcp|google cloud|amazon web services|microsoft azure|kubernetes|docker)\b/g,
+        // Tools and technologies
+        /\b(git|github|gitlab|jenkins|ci\/cd|devops|agile|scrum|jira|confluence|figma|sketch)\b/g,
+        // Data and analytics
+        /\b(sql|nosql|machine learning|ai|artificial intelligence|data science|analytics|tableau|power bi)\b/g,
+        // Web technologies
+        /\b(html|css|sass|scss|bootstrap|tailwind|responsive design|rest api|graphql|microservices)\b/g,
+      ];
+
+      // Soft skills patterns
+      const softSkillsPatterns = [
+        /\b(leadership|communication|teamwork|collaboration|problem solving|analytical|creative|innovative)\b/g,
+        /\b(project management|time management|organization|attention to detail|multitasking)\b/g,
+        /\b(customer service|client relations|stakeholder management|presentation|negotiation)\b/g,
+      ];
+
+      // Experience level indicators
+      const experiencePatterns = [
+        /\b(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)\b/g,
+        /\b(senior|junior|mid-level|entry-level|lead|principal|architect|manager|director)\b/g,
+      ];
+
+      // Education requirements
+      const educationPatterns = [
+        /\b(bachelor|master|phd|degree|diploma|certification|certified|bsc|msc|mba)\b/g,
+      ];
+
+      const keywords = {
+        required: [],
+        preferred: [],
+        technical: [],
+        soft: [],
+        experience: [],
+        education: [],
+      };
+
+      // Extract technical skills
+      technicalPatterns.forEach((pattern) => {
+        const matches = text.match(pattern);
+        if (matches) {
+          keywords.technical.push(...matches.map((m) => m.toLowerCase()));
+        }
+      });
+
+      // Extract soft skills
+      softSkillsPatterns.forEach((pattern) => {
+        const matches = text.match(pattern);
+        if (matches) {
+          keywords.soft.push(...matches.map((m) => m.toLowerCase()));
+        }
+      });
+
+      // Extract experience requirements
+      experiencePatterns.forEach((pattern) => {
+        const matches = text.match(pattern);
+        if (matches) {
+          keywords.experience.push(...matches.map((m) => m.toLowerCase()));
+        }
+      });
+
+      // Extract education requirements
+      educationPatterns.forEach((pattern) => {
+        const matches = text.match(pattern);
+        if (matches) {
+          keywords.education.push(...matches.map((m) => m.toLowerCase()));
+        }
+      });
+
+      // Remove duplicates and sort
+      Object.keys(keywords).forEach((key) => {
+        keywords[key] = [...new Set(keywords[key])].sort();
+      });
+
+      // Categorize as required vs preferred based on context
+      keywords.required = [
+        ...keywords.technical,
+        ...keywords.experience,
+        ...keywords.education,
+      ];
+      keywords.preferred = [...keywords.soft];
+
+      return keywords;
+    };
+
+    // Calculate keyword match score
+    const calculateKeywordMatchScore = (cvText, jobKeywords) => {
+      const allKeywords = [...jobKeywords.required, ...jobKeywords.preferred];
+      const totalKeywords = allKeywords.length;
+
+      if (totalKeywords === 0) {
+        return { score: 0, matched: 0, total: 0, details: [] };
+      }
+
+      let matchedKeywords = 0;
+      const details = [];
+
+      allKeywords.forEach((keyword) => {
+        const regex = new RegExp(
+          `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+          "g"
+        );
+        const matches = cvText.match(regex);
+        const count = matches ? matches.length : 0;
+
+        if (count > 0) {
+          matchedKeywords++;
+          details.push({
+            keyword,
+            count,
+            found: true,
+          });
+        } else {
+          details.push({
+            keyword,
+            count: 0,
+            found: false,
+          });
+        }
+      });
+
+      const score = Math.round((matchedKeywords / totalKeywords) * 100);
+
+      return {
+        score,
+        matched: matchedKeywords,
+        total: totalKeywords,
+        details,
+      };
+    };
+
+    // Extract keywords from job description
+    const jobKeywords = extractJobKeywords(jdText);
+    const keywordScore = calculateKeywordMatchScore(cvTextLower, jobKeywords);
+    const overallScore = Math.min(keywordScore.score + 30, 100);
 
     // Calculate ATS analysis
     const atsAnalysis = {
@@ -117,9 +210,9 @@ exports.handler = async (event, context) => {
           : "D",
       breakdown: {
         keywordMatch: {
-          score: keywordScore,
-          matched: foundKeywords.length,
-          total: technicalKeywords.length,
+          score: keywordScore.score,
+          matched: keywordScore.matched,
+          total: keywordScore.total,
         },
         experienceMatch: { score: 75, required: 3, candidate: 2 },
         educationMatch: { score: 80 },
@@ -130,7 +223,7 @@ exports.handler = async (event, context) => {
         {
           type: "important",
           category: "Keywords",
-          message: `Found ${foundKeywords.length} of ${technicalKeywords.length} technical keywords`,
+          message: `Found ${keywordScore.matched} of ${keywordScore.total} keywords from job description`,
           impact: "Medium",
         },
       ],
@@ -180,11 +273,13 @@ Job Description: ${jdText}`,
       } catch (parseError) {
         console.error("JSON parsing error:", parseError);
         parsedResponse = {
-          matchScore: Math.min(keywordScore + 20, 100),
-          skillsMatch: foundKeywords,
-          missingSkills: technicalKeywords.filter(
-            (k) => !foundKeywords.includes(k)
-          ),
+          matchScore: Math.min(keywordScore.score + 20, 100),
+          skillsMatch: keywordScore.details
+            .filter((d) => d.found)
+            .map((d) => d.keyword),
+          missingSkills: keywordScore.details
+            .filter((d) => !d.found)
+            .map((d) => d.keyword),
           recommendations: ["Add missing technical keywords"],
           assessment: "Analysis completed with basic keyword matching",
           keywordAnalysis: {},
@@ -200,11 +295,13 @@ Job Description: ${jdText}`,
 
       // Fallback to local analysis
       analysis = {
-        matchScore: Math.min(keywordScore + 20, 100),
-        skillsMatch: foundKeywords,
-        missingSkills: technicalKeywords.filter(
-          (k) => !foundKeywords.includes(k)
-        ),
+        matchScore: Math.min(keywordScore.score + 20, 100),
+        skillsMatch: keywordScore.details
+          .filter((d) => d.found)
+          .map((d) => d.keyword),
+        missingSkills: keywordScore.details
+          .filter((d) => !d.found)
+          .map((d) => d.keyword),
         recommendations: [
           "Add missing technical keywords to improve match",
           "Highlight relevant experience more prominently",
@@ -213,11 +310,11 @@ Job Description: ${jdText}`,
           "Add more action verbs to describe accomplishments",
         ],
         assessment: `Your CV matches ${Math.min(
-          keywordScore + 20,
+          keywordScore.score + 20,
           100
         )}% of the job requirements. Found ${
-          foundKeywords.length
-        } matching technical skills.`,
+          keywordScore.matched
+        } matching keywords from the job description.`,
         keywordAnalysis: {},
         atsAnalysis,
       };
