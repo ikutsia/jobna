@@ -699,28 +699,53 @@ exports.handler = async (event, context) => {
         "bsc",
         "msc",
         "mba",
+        "ma",
+        "ba",
       ];
-      let score = 0;
-      const foundEducation = [];
 
-      educationKeywords.forEach((edu) => {
-        if (jdText.includes(edu) && cvText.includes(edu)) {
-          score += 20;
-          foundEducation.push(edu);
+      // Check if job description has specific education requirements
+      const jdEducationKeywords = educationKeywords.filter((edu) =>
+        jdText.includes(edu)
+      );
+
+      // Check what education the candidate has
+      const cvEducationKeywords = educationKeywords.filter((edu) =>
+        cvText.includes(edu)
+      );
+
+      let score = 0;
+      let description = "";
+
+      if (jdEducationKeywords.length > 0) {
+        // Job has specific education requirements - check if candidate meets them
+        const matchedEducation = jdEducationKeywords.filter((edu) =>
+          cvEducationKeywords.includes(edu)
+        );
+        score = Math.round(
+          (matchedEducation.length / jdEducationKeywords.length) * 100
+        );
+        description =
+          matchedEducation.length > 0
+            ? `Education requirements met: ${matchedEducation.join(", ")}`
+            : `Missing education requirements: ${jdEducationKeywords.join(
+                ", "
+              )}`;
+      } else {
+        // No specific education requirements in job - give points for having education
+        if (cvEducationKeywords.length > 0) {
+          score = 100; // Has education, no specific requirements
+          description = `Has education: ${cvEducationKeywords.join(", ")}`;
+        } else {
+          score = 50; // No education mentioned, but no requirements either
+          description = "No education mentioned, but no specific requirements";
         }
-      });
+      }
 
       return {
         score: Math.min(score, 100),
-        found: foundEducation,
-        hasEducation:
-          cvText.includes("degree") ||
-          cvText.includes("bachelor") ||
-          cvText.includes("master"),
-        description:
-          foundEducation.length > 0
-            ? `Education requirements met: ${foundEducation.join(", ")}`
-            : "No specific education requirements found in job description",
+        found: cvEducationKeywords,
+        hasEducation: cvEducationKeywords.length > 0,
+        description: description,
       };
     };
 
