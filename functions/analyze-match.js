@@ -73,7 +73,10 @@ exports.handler = async (event, context) => {
         /\b(procurement|sourcing|strategic sourcing|category management|supplier management|vendor management)\b/g,
         /\b(spend analysis|market analysis|benchmarking|contract negotiation|stakeholder management)\b/g,
         /\b(process improvement|change management|project management|program management|risk management)\b/g,
-        /\b(marketing|brand marketing|digital marketing|marketing procurement|marketing campaigns)\b/g,
+        // Marketing terms - separated for precision
+        /\b(brand marketing|digital marketing|marketing campaigns|creative marketing|advertising)\b/g,
+        /\b(marketing procurement|procurement for marketing|marketing sourcing)\b/g,
+        /\b(marketing|marketing strategy|marketing operations)\b/g,
         /\b(analytical|analytics|data analysis|data-driven|reporting|presentation|communication)\b/g,
         /\b(leadership|team management|cross-functional|international|global|multinational)\b/g,
         /\b(optimization|efficiency|cost reduction|savings|roi|kpi|performance|metrics)\b/g,
@@ -225,12 +228,23 @@ exports.handler = async (event, context) => {
         ],
         category: ["category management", "category strategies", "categories"],
 
-        // Marketing terms
+        // Marketing terms - separated for precision
         marketing: [
-          "marketing procurement",
           "marketing activities",
-          "marketing campaigns",
-          "brand marketing",
+          "marketing operations",
+          "marketing strategy",
+        ],
+        "brand marketing": [
+          "brand strategy",
+          "brand awareness",
+          "brand campaigns",
+          "advertising",
+          "creative marketing",
+        ],
+        "marketing procurement": [
+          "procurement for marketing",
+          "marketing sourcing",
+          "marketing vendor management",
         ],
 
         // Process terms

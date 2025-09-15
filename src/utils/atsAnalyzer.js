@@ -29,6 +29,20 @@ export const extractJobKeywords = (jdText) => {
     /\b(sql|nosql|machine learning|ai|artificial intelligence|data science|analytics|tableau|power bi)\b/g,
     // Web technologies
     /\b(html|css|sass|scss|bootstrap|tailwind|responsive design|rest api|graphql|microservices)\b/g,
+    // Business and procurement terms
+    /\b(procurement|sourcing|strategic sourcing|category management|supplier management|vendor management)\b/g,
+    /\b(spend analysis|market analysis|benchmarking|contract negotiation|stakeholder management)\b/g,
+    /\b(process improvement|change management|project management|program management|risk management)\b/g,
+    // Marketing terms - separated for precision
+    /\b(brand marketing|digital marketing|marketing campaigns|creative marketing|advertising)\b/g,
+    /\b(marketing procurement|procurement for marketing|marketing sourcing)\b/g,
+    /\b(marketing|marketing strategy|marketing operations)\b/g,
+    /\b(analytical|analytics|data analysis|data-driven|reporting|presentation|communication)\b/g,
+    /\b(leadership|team management|cross-functional|international|global|multinational)\b/g,
+    /\b(optimization|efficiency|cost reduction|savings|roi|kpi|performance|metrics)\b/g,
+    // Software and systems
+    /\b(sap|ariba|oracle|salesforce|microsoft office|excel|powerpoint|word|google workspace)\b/g,
+    /\b(erp|crm|scm|wms|tms|bi|dashboard|reporting tools|project management software)\b/g,
   ];
 
   // Soft skills patterns
