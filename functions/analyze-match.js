@@ -465,10 +465,266 @@ exports.handler = async (event, context) => {
       };
     };
 
+    // Calculate format score
+    const calculateFormatScore = (cvText) => {
+      let score = 0;
+      const issues = [];
+      const strengths = [];
+
+      // Check for common ATS-friendly elements with comprehensive variations
+      const experienceTerms = [
+        "experience",
+        "work experience",
+        "work history",
+        "employment",
+        "career",
+        "professional experience",
+      ];
+      const hasExperience = experienceTerms.some((term) =>
+        cvText.includes(term)
+      );
+      if (hasExperience) {
+        score += 20;
+        strengths.push("Has experience section");
+      }
+
+      const educationTerms = [
+        "education",
+        "academic",
+        "qualifications",
+        "degrees",
+        "certifications",
+        "training",
+      ];
+      const hasEducation = educationTerms.some((term) => cvText.includes(term));
+      if (hasEducation) {
+        score += 20;
+        strengths.push("Has education section");
+      }
+
+      const skillsTerms = [
+        "skills",
+        "technical skills",
+        "competencies",
+        "capabilities",
+        "expertise",
+        "proficiencies",
+      ];
+      const hasSkills = skillsTerms.some((term) => cvText.includes(term));
+      if (hasSkills) {
+        score += 20;
+        strengths.push("Has skills section");
+      }
+      if (cvText.includes("@") && cvText.includes(".")) {
+        score += 20;
+        strengths.push("Has email address");
+      }
+      if (cvText.match(/\d{3}[-.]?\d{3}[-.]?\d{4}/)) {
+        score += 20;
+        strengths.push("Has phone number");
+      }
+
+      // Check for potential ATS issues
+      if (cvText.includes("table") || cvText.includes("column")) {
+        issues.push("Contains tables/columns - may confuse ATS systems");
+        score -= 10;
+      }
+      if (
+        cvText.includes("graphic") ||
+        cvText.includes("image") ||
+        cvText.includes("photo")
+      ) {
+        issues.push("Contains graphics/images - ATS cannot read them");
+        score -= 15;
+      }
+      if (cvText.includes("header") && cvText.includes("footer")) {
+        issues.push("Contains headers/footers - may not be read by ATS");
+        score -= 5;
+      }
+      if (cvText.match(/[^\x00-\x7F]/)) {
+        issues.push("Contains special characters - may cause ATS issues");
+        score -= 5;
+      }
+
+      // Check for good structure indicators with comprehensive variations
+      const summaryTerms = [
+        "summary",
+        "professional summary",
+        "objective",
+        "career objective",
+        "profile",
+        "about",
+        "overview",
+        "executive summary",
+      ];
+      const hasSummary = summaryTerms.some((term) => cvText.includes(term));
+      if (hasSummary) {
+        strengths.push("Has professional summary");
+        score += 5;
+      }
+      const achievementTerms = [
+        "achievement",
+        "achievements",
+        "accomplishment",
+        "accomplishments",
+        "results",
+        "success",
+        "awards",
+      ];
+      const hasAchievements = achievementTerms.some((term) =>
+        cvText.includes(term)
+      );
+      if (hasAchievements) {
+        strengths.push("Highlights achievements");
+        score += 5;
+      }
+
+      const certificationTerms = [
+        "certification",
+        "certifications",
+        "certificate",
+        "certificates",
+        "certified",
+        "licenses",
+        "credentials",
+      ];
+      const hasCertifications = certificationTerms.some((term) =>
+        cvText.includes(term)
+      );
+      if (hasCertifications) {
+        strengths.push("Includes certifications");
+        score += 5;
+      }
+
+      // Ensure score is between 0 and 100
+      score = Math.max(0, Math.min(100, score));
+
+      return {
+        score,
+        issues,
+        strengths,
+        description:
+          issues.length > 0
+            ? `ATS-friendly with ${issues.length} potential issues`
+            : "ATS-friendly structure",
+      };
+    };
+
     // Extract keywords from job description
     const jobKeywords = extractJobKeywords(jdText);
     const keywordScore = calculateKeywordMatchScore(cvTextLower, jobKeywords);
     const experienceScore = calculateExperienceMatchScore(
+      cvTextLower,
+      jdTextLower
+    );
+    const formatScore = calculateFormatScore(cvText);
+
+    // Calculate content quality score
+    const calculateContentQualityScore = (cvText) => {
+      let score = 0;
+      const suggestions = [];
+
+      // Check for quantified achievements
+      const numbers = cvText.match(/\d+%/g);
+      if (numbers && numbers.length > 0) {
+        score += 30;
+      } else {
+        suggestions.push(
+          "Add quantified achievements (percentages, numbers, results)"
+        );
+      }
+
+      // Check for action verbs
+      const actionVerbs = [
+        "achieved",
+        "improved",
+        "increased",
+        "decreased",
+        "managed",
+        "led",
+        "developed",
+        "created",
+        "implemented",
+        "optimized",
+        "delivered",
+        "executed",
+        "coordinated",
+        "facilitated",
+        "established",
+        "built",
+      ];
+      const hasActionVerbs = actionVerbs.some((verb) =>
+        cvText.toLowerCase().includes(verb)
+      );
+      if (hasActionVerbs) {
+        score += 30;
+      } else {
+        suggestions.push(
+          "Use strong action verbs to describe your achievements"
+        );
+      }
+
+      // Check for relevant keywords
+      const technicalTerms = cvText.match(
+        /\b(procurement|sourcing|management|analytical|strategic|leadership|project|stakeholder|supplier|category)\b/gi
+      );
+      if (technicalTerms && technicalTerms.length > 5) {
+        score += 40;
+      } else {
+        suggestions.push("Include more relevant professional keywords");
+      }
+
+      return {
+        score: Math.min(score, 100),
+        suggestions,
+        description:
+          suggestions.length === 0
+            ? "Strong content with achievements and action verbs"
+            : "Content could be strengthened with more achievements",
+      };
+    };
+
+    const contentScore = calculateContentQualityScore(cvText);
+
+    // Calculate education match score
+    const calculateEducationMatchScore = (cvText, jdText) => {
+      const educationKeywords = [
+        "bachelor",
+        "master",
+        "phd",
+        "degree",
+        "diploma",
+        "certification",
+        "certified",
+        "bsc",
+        "msc",
+        "mba",
+      ];
+      let score = 0;
+      const foundEducation = [];
+
+      educationKeywords.forEach((edu) => {
+        if (jdText.includes(edu) && cvText.includes(edu)) {
+          score += 20;
+          foundEducation.push(edu);
+        }
+      });
+
+      return {
+        score: Math.min(score, 100),
+        found: foundEducation,
+        hasEducation:
+          cvText.includes("degree") ||
+          cvText.includes("bachelor") ||
+          cvText.includes("master"),
+        description:
+          foundEducation.length > 0
+            ? `Education requirements met: ${foundEducation.join(", ")}`
+            : "No specific education requirements found in job description",
+      };
+    };
+
+    const educationScore = calculateEducationMatchScore(
       cvTextLower,
       jdTextLower
     );
@@ -495,9 +751,9 @@ exports.handler = async (event, context) => {
           cvTextLower,
           jdTextLower
         ),
-        educationMatch: { score: 80 },
-        format: { score: 85 },
-        contentQuality: { score: 70 },
+        educationMatch: calculateEducationMatchScore(cvTextLower, jdTextLower),
+        format: calculateFormatScore(cvText),
+        contentQuality: calculateContentQualityScore(cvText),
       },
       recommendations: [
         {
