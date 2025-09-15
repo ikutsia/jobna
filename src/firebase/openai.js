@@ -17,17 +17,33 @@ const FREE_TIER_LIMITS = {
 export const checkUserUsage = async (userId) => {
   try {
     const userDoc = await getDoc(doc(db, "users", userId));
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+    console.log("🔍 Firebase Debug:", {
+      userId: userId?.substring(0, 8) + "...",
+      userExists: userDoc.exists(),
+      currentMonth,
+      userData: userDoc.exists() ? userDoc.data() : null,
+    });
+
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
 
       if (userData.apiUsage && userData.apiUsage[currentMonth]) {
+        console.log(
+          "📊 Found usage for current month:",
+          userData.apiUsage[currentMonth]
+        );
         return userData.apiUsage[currentMonth];
+      } else {
+        console.log("📊 No usage found for current month, returning 0");
       }
+    } else {
+      console.log("❌ User document does not exist in Firestore");
     }
     return 0;
   } catch (error) {
-    console.error("Error checking user usage:", error);
+    console.error("❌ Error checking user usage:", error);
     return 0;
   }
 };
@@ -234,7 +250,18 @@ export const testNetlifyFunctions = async () => {
 // Get user's remaining API calls for the month
 export const getRemainingCalls = async (userId) => {
   const currentUsage = await checkUserUsage(userId);
-  return Math.max(0, FREE_TIER_LIMITS.monthlyCalls - currentUsage);
+  const remaining = Math.max(0, FREE_TIER_LIMITS.monthlyCalls - currentUsage);
+
+  // Debug logging
+  console.log("🔍 Usage Debug:", {
+    userId: userId?.substring(0, 8) + "...",
+    currentUsage,
+    monthlyLimit: FREE_TIER_LIMITS.monthlyCalls,
+    remaining,
+    currentMonth: new Date().toISOString().slice(0, 7),
+  });
+
+  return remaining;
 };
 
 // Get cost estimate for user
