@@ -624,7 +624,7 @@ exports.handler = async (event, context) => {
       };
     };
 
-    // Extract keywords from job description
+    // Extract keywords from job description (updated)
     const jobKeywords = extractJobKeywords(jdText);
     const keywordScore = calculateKeywordMatchScore(cvTextLower, jobKeywords);
     const experienceScore = calculateExperienceMatchScore(
