@@ -170,20 +170,6 @@ function AnalyzeNow() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* AI Analysis Mode - Single AI Analysis */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-            <span className="text-lg font-semibold text-blue-700">
-              AI Analysis
-            </span>
-          </div>
-          <p className="text-sm text-gray-600 mt-2 ml-7">
-            Advanced AI analysis using Google Gemini for enhanced accuracy and
-            contextual understanding
-          </p>
-        </div>
-
         {/* Back Button */}
         <div className="mb-6">
           <Link
