@@ -6,6 +6,7 @@ import {
   getCostEstimate,
 } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
+import AIAnalysisToggle from "./AIAnalysisToggle";
 
 function AnalyzeNow() {
   const [analysisData, setAnalysisData] = useState({
@@ -40,6 +41,18 @@ function AnalyzeNow() {
     remaining: "5.0000",
     isLoading: true,
   });
+
+  const [aiMode, setAiMode] = useState({
+    isHybridEnabled: false,
+  });
+
+  // Handle AI mode toggle
+  const handleAIModeToggle = (isHybridEnabled) => {
+    setAiMode({ isHybridEnabled });
+    console.log(
+      `AI Mode changed to: ${isHybridEnabled ? "Hybrid" : "Traditional"}`
+    );
+  };
 
   // Check user's remaining API calls and cost
   const checkUsage = async () => {
@@ -94,8 +107,10 @@ function AnalyzeNow() {
         );
       }
 
-      // Analyze match with OpenAI using actual uploaded files
-      const results = await analyzeMatch(cvText, jdText, user.uid);
+      // Analyze match with AI (traditional or hybrid based on user selection)
+      const results = await analyzeMatch(cvText, jdText, user.uid, {
+        useHybridAI: aiMode.isHybridEnabled,
+      });
 
       setAnalysisResults(results);
       setAnalysisData({
@@ -167,6 +182,12 @@ function AnalyzeNow() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+        {/* AI Analysis Toggle */}
+        <AIAnalysisToggle
+          onToggle={handleAIModeToggle}
+          isHybridEnabled={aiMode.isHybridEnabled}
+        />
+
         {/* Back Button */}
         <div className="mb-6">
           <Link

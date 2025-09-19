@@ -1,9 +1,14 @@
 const OpenAI = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { executeParallelTasks } = require("./ai-router");
 
-// Initialize OpenAI with server-side API key
+// Initialize AI models
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 exports.handler = async (event, context) => {
   // Handle CORS
@@ -30,7 +35,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { cvText, jdText, userId } = JSON.parse(event.body);
+    const { cvText, jdText, userId, useHybridAI } = JSON.parse(event.body);
 
     if (!cvText || !jdText || !userId) {
       return {
@@ -895,6 +900,32 @@ Job Description: ${jdText}`,
       };
     }
 
+    // Choose analysis method based on user request or environment variable
+    const shouldUseHybridAI =
+      useHybridAI || process.env.USE_HYBRID_AI === "true";
+
+    let finalAnalysis = analysis;
+
+    if (shouldUseHybridAI) {
+      console.log("🤖 Using hybrid AI analysis...");
+      try {
+        // Use hybrid AI approach for enhanced analysis
+        const hybridResult = await performHybridAnalysis(cvText, jdText);
+        finalAnalysis = {
+          ...analysis,
+          hybridAI: hybridResult,
+          modelUsed: "Hybrid (GPT-3.5 + Gemini 1.5)",
+          enhancedAnalysis: true,
+        };
+      } catch (error) {
+        console.error(
+          "Hybrid AI analysis failed, falling back to traditional:",
+          error
+        );
+        // Fall back to traditional analysis if hybrid fails
+      }
+    }
+
     return {
       statusCode: 200,
       headers: {
@@ -902,7 +933,7 @@ Job Description: ${jdText}`,
       },
       body: JSON.stringify({
         success: true,
-        data: analysis,
+        data: finalAnalysis,
         tokensUsed: 100,
       }),
     };
@@ -921,3 +952,129 @@ Job Description: ${jdText}`,
     };
   }
 };
+
+// Hybrid AI analysis function
+async function performHybridAnalysis(cvText, jdText) {
+  console.log("🤖 Starting hybrid AI analysis...");
+
+  try {
+    // Define tasks for parallel execution
+    const tasks = [
+      {
+        type: "keyword_extraction",
+        content: jdText,
+        additionalData: {},
+      },
+      {
+        type: "semantic_analysis",
+        content: cvText,
+        additionalData: { jdText },
+      },
+      {
+        type: "experience_evaluation",
+        content: cvText,
+        additionalData: { jdText },
+      },
+      {
+        type: "content_quality_assessment",
+        content: cvText,
+        additionalData: {},
+      },
+    ];
+
+    // Execute tasks in parallel
+    const results = await executeParallelTasks(tasks);
+
+    // Process results
+    const keywordResult = results.keyword_extraction;
+    const semanticResult = results.semantic_analysis;
+    const experienceResult = results.experience_evaluation;
+    const contentResult = results.content_quality_assessment;
+
+    // Extract keywords from GPT result
+    let extractedKeywords = [];
+    if (keywordResult.success) {
+      try {
+        extractedKeywords = JSON.parse(keywordResult.result);
+      } catch (e) {
+        console.error("Failed to parse keyword extraction result:", e);
+      }
+    }
+
+    // Extract semantic analysis from Gemini result
+    let semanticAnalysis = {};
+    if (semanticResult.success) {
+      try {
+        const jsonMatch = semanticResult.result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          semanticAnalysis = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse semantic analysis result:", e);
+      }
+    }
+
+    // Extract experience analysis from Gemini result
+    let experienceAnalysis = {};
+    if (experienceResult.success) {
+      try {
+        const jsonMatch = experienceResult.result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          experienceAnalysis = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse experience analysis result:", e);
+      }
+    }
+
+    // Extract content quality analysis from Gemini result
+    let contentQualityAnalysis = {};
+    if (contentResult.success) {
+      try {
+        const jsonMatch = contentResult.result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          contentQualityAnalysis = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse content quality analysis result:", e);
+      }
+    }
+
+    // Calculate overall score
+    const scores = [
+      semanticAnalysis.semanticMatch?.score || 0,
+      experienceAnalysis.experienceAnalysis?.score || 0,
+      contentQualityAnalysis.contentQuality?.score || 0,
+    ].filter((score) => score > 0);
+
+    const overallScore =
+      scores.length > 0
+        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+        : 0;
+
+    return {
+      keywordAnalysis: {
+        totalKeywords: extractedKeywords.length,
+        foundKeywords: extractedKeywords.filter((keyword) =>
+          cvText.toLowerCase().includes(keyword.toLowerCase())
+        ).length,
+        keywords: extractedKeywords,
+        model: "GPT-3.5-turbo",
+      },
+      semanticAnalysis: semanticAnalysis.semanticMatch || {},
+      experienceAnalysis: experienceAnalysis.experienceAnalysis || {},
+      contentQualityAnalysis: contentQualityAnalysis.contentQuality || {},
+      overallScore,
+      modelUsed: "Hybrid (GPT-3.5 + Gemini 1.5)",
+      analysisTimestamp: new Date().toISOString(),
+      success: true,
+    };
+  } catch (error) {
+    console.error("Hybrid analysis error:", error);
+    return {
+      success: false,
+      error: error.message,
+      fallbackUsed: true,
+    };
+  }
+}
