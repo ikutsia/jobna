@@ -581,34 +581,68 @@ function AnalyzeNow() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {analysisResults.keywordAnalysis &&
                 Object.keys(analysisResults.keywordAnalysis).length > 0 ? (
-                  Object.entries(analysisResults.keywordAnalysis).map(
-                    ([keyword, data]) => (
-                      <div
-                        key={keyword}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium text-gray-900">
-                            {keyword}
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              data.importance === "High"
-                                ? "bg-red-100 text-red-800"
-                                : data.importance === "Medium"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            {data.importance}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          Mentioned {data.count} times
-                        </p>
+                  <>
+                    {/* Score */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-900">Score</span>
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {analysisResults.keywordAnalysis.score || 0}%
+                        </span>
                       </div>
-                    )
-                  )
+                      <p className="text-sm text-gray-600">Match percentage</p>
+                    </div>
+
+                    {/* Found */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-900">Found</span>
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {analysisResults.keywordAnalysis.found || 0}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">Keywords matched</p>
+                    </div>
+
+                    {/* Total */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-900">Total</span>
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {analysisResults.keywordAnalysis.total || 0}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Keywords in job description
+                      </p>
+                    </div>
+
+                    {/* Matches */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-900">
+                          Matches
+                        </span>
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {analysisResults.keywordAnalysis.matches?.length || 0}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">Matched keywords</p>
+                    </div>
+
+                    {/* Description */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-900">
+                          Description
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {analysisResults.keywordAnalysis.description ||
+                          "No description available"}
+                      </p>
+                    </div>
+                  </>
                 ) : (
                   <div className="col-span-full text-center text-gray-500 py-8">
                     <p>No keyword analysis available yet.</p>

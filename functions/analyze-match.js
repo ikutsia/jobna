@@ -291,9 +291,20 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         overallScore,
         grade,
         breakdown: {
-          keywordMatch: keywordAnalysis.matchPercentage || 0,
-          experienceMatch: experienceAnalysis.experienceAnalysis?.score || 0,
-          contentQuality: contentQualityAnalysis.contentQuality?.score || 0,
+          keywordMatch: {
+            score: keywordAnalysis.matchPercentage || 0,
+            matched: keywordAnalysis.matchedKeywords?.length || 0,
+            total: keywordAnalysis.jobKeywords?.length || 0,
+          },
+          experienceMatch: {
+            score: experienceAnalysis.experienceAnalysis?.score || 0,
+            yearsRequired:
+              experienceAnalysis.experienceAnalysis?.yearsRequired || 0,
+            yearsFound: experienceAnalysis.experienceAnalysis?.yearsFound || 0,
+          },
+          contentQuality: {
+            score: contentQualityAnalysis.contentQuality?.score || 0,
+          },
         },
         recommendations,
       },
@@ -334,7 +345,11 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
       atsAnalysis: {
         overallScore: 0,
         grade: "F",
-        breakdown: {},
+        breakdown: {
+          keywordMatch: { score: 0, matched: 0, total: 0 },
+          experienceMatch: { score: 0, yearsRequired: 0, yearsFound: 0 },
+          contentQuality: { score: 0 },
+        },
         recommendations: ["Analysis failed"],
       },
       modelUsed: "AI Analysis (Failed)",
