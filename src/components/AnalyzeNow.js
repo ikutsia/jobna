@@ -7,6 +7,7 @@ import {
 } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
 import AIAnalysisToggle from "./AIAnalysisToggle";
+import GeminiTest from "./GeminiTest";
 
 function AnalyzeNow() {
   const [analysisData, setAnalysisData] = useState({
@@ -187,6 +188,9 @@ function AnalyzeNow() {
           onToggle={handleAIModeToggle}
           isHybridEnabled={aiMode.isHybridEnabled}
         />
+
+        {/* Gemini Test Component */}
+        <GeminiTest />
 
         {/* Back Button */}
         <div className="mb-6">
