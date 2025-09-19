@@ -48,12 +48,21 @@ exports.handler = async (event, context) => {
       process.env.GEMINI_API_KEY?.substring(0, 10) + "..."
     );
 
-    // Test 1: Simple keyword extraction with Gemini
-    const keywordPrompt = `Extract exactly 10 technical and professional keywords from this job description. Return ONLY a JSON array:
+    // Test 1: Keyword extraction from both CV and Job Description
+    const keywordPrompt = `Extract and compare ALL relevant technical and professional keywords from both the CV and Job Description. Be comprehensive - include all important terms, skills, technologies, and qualifications. There are NO limits on the number of keywords.
 
+CV: ${cvText}
 Job Description: ${jdText}
 
-Return format: ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8", "keyword9", "keyword10"]`;
+IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the JSON. Start with { and end with }.
+
+{
+  "jobKeywords": ["keyword1", "keyword2", "keyword3", "..."],
+  "cvKeywords": ["keyword1", "keyword2", "keyword3", "..."],
+  "matchedKeywords": ["keyword1", "keyword2", "..."],
+  "missingKeywords": ["keyword1", "keyword2", "..."],
+  "matchPercentage": 75
+}`;
 
     console.log("📝 Testing keyword extraction...");
     const keywordResult = await geminiModel.generateContent(keywordPrompt);
@@ -71,7 +80,8 @@ Return format: ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "key
 CV: ${cvText}
 Job Description: ${jdText}
 
-Provide analysis in this EXACT JSON format:
+IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the JSON. Start with { and end with }.
+
 {
   "experienceAnalysis": {
     "score": 85,
@@ -100,7 +110,8 @@ Provide analysis in this EXACT JSON format:
 
 CV: ${cvText}
 
-Provide analysis in this EXACT JSON format:
+IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the JSON. Start with { and end with }.
+
 {
   "contentQuality": {
     "score": 78,
@@ -126,26 +137,148 @@ Provide analysis in this EXACT JSON format:
     let keywordAnalysis, experienceAnalysis, contentAnalysis;
 
     try {
-      const keywordMatch = keywordText.match(/\[[\s\S]*?\]/);
-      keywordAnalysis = keywordMatch ? JSON.parse(keywordMatch[0]) : [];
+      // Try multiple methods for keyword JSON parsing
+      let keywordJson = null;
+
+      // Method 1: Direct JSON object
+      const keywordMatch = keywordText.match(/\{[\s\S]*?\}/);
+      if (keywordMatch) {
+        try {
+          keywordJson = JSON.parse(keywordMatch[0]);
+        } catch (e) {
+          console.log("Keyword Method 1 failed, trying method 2...");
+        }
+      }
+
+      // Method 2: JSON between code blocks
+      if (!keywordJson) {
+        const codeBlockMatch = keywordText.match(
+          /```json\s*(\{[\s\S]*?\})\s*```/
+        );
+        if (codeBlockMatch) {
+          try {
+            keywordJson = JSON.parse(codeBlockMatch[1]);
+          } catch (e) {
+            console.log("Keyword Method 2 failed, using raw response...");
+          }
+        }
+      }
+
+      keywordAnalysis = keywordJson || {
+        error: "Failed to parse keyword analysis",
+        rawResponse: keywordText.substring(0, 500) + "...",
+      };
     } catch (e) {
-      keywordAnalysis = ["Failed to parse keywords"];
+      keywordAnalysis = {
+        error: "Failed to parse keyword analysis",
+        rawResponse: keywordText.substring(0, 500) + "...",
+      };
     }
 
     try {
+      // Try multiple JSON extraction methods
+      let experienceJson = null;
+
+      // Method 1: Look for JSON object
       const experienceMatch = experienceText.match(/\{[\s\S]*?\}/);
-      experienceAnalysis = experienceMatch
-        ? JSON.parse(experienceMatch[0])
-        : {};
+      if (experienceMatch) {
+        try {
+          experienceJson = JSON.parse(experienceMatch[0]);
+        } catch (e) {
+          console.log("Method 1 failed, trying method 2...");
+        }
+      }
+
+      // Method 2: Look for JSON between code blocks
+      if (!experienceJson) {
+        const codeBlockMatch = experienceText.match(
+          /```json\s*(\{[\s\S]*?\})\s*```/
+        );
+        if (codeBlockMatch) {
+          try {
+            experienceJson = JSON.parse(codeBlockMatch[1]);
+          } catch (e) {
+            console.log("Method 2 failed, trying method 3...");
+          }
+        }
+      }
+
+      // Method 3: Look for any JSON-like structure
+      if (!experienceJson) {
+        const anyJsonMatch = experienceText.match(
+          /\{[\s\S]*"experienceAnalysis"[\s\S]*?\}/
+        );
+        if (anyJsonMatch) {
+          try {
+            experienceJson = JSON.parse(anyJsonMatch[0]);
+          } catch (e) {
+            console.log("Method 3 failed, using raw response...");
+          }
+        }
+      }
+
+      experienceAnalysis = experienceJson || {
+        error: "Failed to parse experience analysis",
+        rawResponse: experienceText.substring(0, 500) + "...",
+      };
     } catch (e) {
-      experienceAnalysis = { error: "Failed to parse experience analysis" };
+      experienceAnalysis = {
+        error: "Failed to parse experience analysis",
+        rawResponse: experienceText.substring(0, 500) + "...",
+      };
     }
 
     try {
+      // Try multiple JSON extraction methods for content
+      let contentJson = null;
+
+      // Method 1: Look for JSON object
       const contentMatch = contentText.match(/\{[\s\S]*?\}/);
-      contentAnalysis = contentMatch ? JSON.parse(contentMatch[0]) : {};
+      if (contentMatch) {
+        try {
+          contentJson = JSON.parse(contentMatch[0]);
+        } catch (e) {
+          console.log("Content Method 1 failed, trying method 2...");
+        }
+      }
+
+      // Method 2: Look for JSON between code blocks
+      if (!contentJson) {
+        const codeBlockMatch = contentText.match(
+          /```json\s*(\{[\s\S]*?\})\s*```/
+        );
+        if (codeBlockMatch) {
+          try {
+            contentJson = JSON.parse(codeBlockMatch[1]);
+          } catch (e) {
+            console.log("Content Method 2 failed, trying method 3...");
+          }
+        }
+      }
+
+      // Method 3: Look for any JSON-like structure
+      if (!contentJson) {
+        const anyJsonMatch = contentText.match(
+          /\{[\s\S]*"contentQuality"[\s\S]*?\}/
+        );
+        if (anyJsonMatch) {
+          try {
+            contentJson = JSON.parse(anyJsonMatch[0]);
+          } catch (e) {
+            console.log("Content Method 3 failed, using raw response...");
+          }
+        }
+      }
+
+      contentAnalysis = contentJson || {
+        error: "Failed to parse content analysis",
+        rawResponse: contentText.substring(0, 500) + "...",
+      };
     } catch (e) {
-      contentAnalysis = { error: "Failed to parse content analysis" };
+      contentAnalysis = {
+        error: "Failed to parse content analysis",
+        rawResponse: contentText.substring(0, 500) + "...",
+      };
     }
 
     const testResult = {
