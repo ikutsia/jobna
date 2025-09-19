@@ -6,8 +6,7 @@ import {
   getCostEstimate,
 } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
-import AIAnalysisToggle from "./AIAnalysisToggle";
-import GeminiTest from "./GeminiTest";
+// AI components removed - now using single AI analysis mode
 
 function AnalyzeNow() {
   const [analysisData, setAnalysisData] = useState({
@@ -43,17 +42,7 @@ function AnalyzeNow() {
     isLoading: true,
   });
 
-  const [aiMode, setAiMode] = useState({
-    isHybridEnabled: false,
-  });
-
-  // Handle AI mode toggle
-  const handleAIModeToggle = (isHybridEnabled) => {
-    setAiMode({ isHybridEnabled });
-    console.log(
-      `AI Mode changed to: ${isHybridEnabled ? "Hybrid" : "Traditional"}`
-    );
-  };
+  // AI mode state removed - now using single AI analysis mode
 
   // Check user's remaining API calls and cost
   const checkUsage = async () => {
@@ -108,10 +97,8 @@ function AnalyzeNow() {
         );
       }
 
-      // Analyze match with AI (traditional or hybrid based on user selection)
-      const results = await analyzeMatch(cvText, jdText, user.uid, {
-        useHybridAI: aiMode.isHybridEnabled,
-      });
+      // Analyze match with AI
+      const results = await analyzeMatch(cvText, jdText, user.uid);
 
       setAnalysisResults(results);
       setAnalysisData({
@@ -183,14 +170,19 @@ function AnalyzeNow() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* AI Analysis Toggle */}
-        <AIAnalysisToggle
-          onToggle={handleAIModeToggle}
-          isHybridEnabled={aiMode.isHybridEnabled}
-        />
-
-        {/* Gemini Test Component */}
-        <GeminiTest />
+        {/* AI Analysis Mode - Single AI Analysis */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+            <span className="text-lg font-semibold text-blue-700">
+              AI Analysis
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 mt-2 ml-7">
+            Advanced AI analysis using Google Gemini for enhanced accuracy and
+            contextual understanding
+          </p>
+        </div>
 
         {/* Back Button */}
         <div className="mb-6">

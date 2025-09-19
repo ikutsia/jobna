@@ -157,7 +157,7 @@ export const analyzeJD = async (jdText, userId) => {
 };
 
 // Analyze CV-JD match using secure Netlify function
-export const analyzeMatch = async (cvText, jdText, userId, options = {}) => {
+export const analyzeMatch = async (cvText, jdText, userId) => {
   try {
     // Check usage limits
     const currentUsage = await checkUserUsage(userId);
@@ -185,7 +185,6 @@ export const analyzeMatch = async (cvText, jdText, userId, options = {}) => {
         cvText,
         jdText,
         userId,
-        useHybridAI: options.useHybridAI || false,
       }),
     });
 
