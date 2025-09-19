@@ -244,21 +244,50 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
     else if (overallScore >= 40) grade = "D";
     else if (overallScore >= 35) grade = "D-";
 
-    // Generate recommendations
+    // Generate recommendations with proper structure
     const recommendations = [];
     if (keywordAnalysis.matchPercentage < 70) {
-      recommendations.push(
-        "Include more relevant keywords from the job description"
-      );
+      recommendations.push({
+        type: "important",
+        title: "Improve Keyword Matching",
+        description:
+          "Include more relevant keywords from the job description to increase your ATS compatibility score.",
+        impact: "High",
+      });
     }
     if (experienceAnalysis.experienceAnalysis?.score < 70) {
-      recommendations.push(
-        "Highlight more relevant experience or address missing requirements"
-      );
+      recommendations.push({
+        type: "critical",
+        title: "Address Experience Gaps",
+        description:
+          "Highlight more relevant experience or address missing requirements to better match the job description.",
+        impact: "High",
+      });
     }
     if (contentQualityAnalysis.contentQuality?.score < 70) {
-      recommendations.push(
-        "Improve content quality with quantified achievements and action verbs"
+      recommendations.push({
+        type: "important",
+        title: "Enhance Content Quality",
+        description:
+          "Improve content quality with quantified achievements and strong action verbs to make your CV more compelling.",
+        impact: "Medium",
+      });
+    }
+
+    // Add Gemini-specific recommendations if available
+    if (
+      contentQualityAnalysis.contentQuality?.suggestions &&
+      contentQualityAnalysis.contentQuality.suggestions.length > 0
+    ) {
+      contentQualityAnalysis.contentQuality.suggestions.forEach(
+        (suggestion, index) => {
+          recommendations.push({
+            type: "important",
+            title: `Content Improvement ${index + 1}`,
+            description: suggestion,
+            impact: "Medium",
+          });
+        }
       );
     }
 
@@ -266,9 +295,7 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
       matchScore: overallScore,
       skillsMatch: keywordAnalysis.matchedKeywords || [],
       missingSkills: keywordAnalysis.missingKeywords || [],
-      recommendations: recommendations.concat(
-        contentQualityAnalysis.contentQuality?.suggestions || []
-      ),
+      recommendations: recommendations,
       assessment: `Your CV scored ${overallScore}% (Grade: ${grade}) for ATS compatibility. ${
         overallScore >= 80
           ? "Excellent! Your CV is well-optimized for ATS systems."
@@ -350,7 +377,14 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
           experienceMatch: { score: 0, yearsRequired: 0, yearsFound: 0 },
           contentQuality: { score: 0 },
         },
-        recommendations: ["Analysis failed"],
+        recommendations: [
+          {
+            type: "critical",
+            title: "Analysis Failed",
+            description: "The analysis encountered an error. Please try again.",
+            impact: "High",
+          },
+        ],
       },
       modelUsed: "AI Analysis (Failed)",
       analysisTimestamp: new Date().toISOString(),

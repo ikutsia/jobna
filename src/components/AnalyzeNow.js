@@ -936,7 +936,7 @@ function AnalyzeNow() {
                                         : "text-blue-800"
                                     }`}
                                   >
-                                    {rec.category}
+                                    {rec.title}
                                   </span>
                                   <span
                                     className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
@@ -959,7 +959,7 @@ function AnalyzeNow() {
                                       : "text-blue-700"
                                   }`}
                                 >
-                                  {rec.message}
+                                  {rec.description}
                                 </p>
                               </div>
                             </div>
