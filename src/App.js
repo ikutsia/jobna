@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import SignUp from "./components/SignUp";
@@ -12,20 +12,23 @@ import PersonalAccount from "./components/PersonalAccount";
 
 function HomePage() {
   const { user, loading, handleLogout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-blue-50">
       {/* Navigation Bar */}
       <nav className="bg-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-12 md:h-16">
             {/* Logo */}
             <div>
-              <h1 className="text-2xl font-bold text-blue-600">jobna AI</h1>
+              <h1 className="text-lg md:text-2xl font-bold text-blue-600">
+                jobna AI
+              </h1>
             </div>
 
-            {/* Right side buttons */}
-            <div className="flex items-center space-x-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               {!loading && (
                 <>
                   {user ? (
@@ -68,47 +71,137 @@ function HomePage() {
                 </>
               )}
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-blue-600 hover:text-blue-700 focus:outline-none focus:text-blue-700"
+                aria-label="Toggle mobile menu"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {isMobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+                {!loading && (
+                  <>
+                    {user ? (
+                      <>
+                        <Link
+                          to="/account"
+                          className="block text-blue-600 hover:text-blue-700 font-semibold py-2 px-4 rounded transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          My Account
+                        </Link>
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="block w-full text-left border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+                        >
+                          Sign Out
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-red-600 font-medium text-sm py-2 px-4">
+                          Feature coming soon...
+                        </div>
+                        <button
+                          className="block w-full text-left bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-2"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Your AI Job Dashboard
+                        </button>
+                        <Link
+                          to="/signup"
+                          className="block border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors mb-2"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Sign Up
+                        </Link>
+                        <Link
+                          to="/login"
+                          className="block border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Log In
+                        </Link>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="py-24">
+      <section className="py-12 md:py-24">
         <div className="max-w-7xl mx-auto px-4 text-center">
           {/* Main Call to Action */}
-          <h1 className="text-5xl font-black text-gray-900 mb-8">
+          <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-6 md:mb-8 leading-tight">
             Tired of laboring with the job search and applying manually?
           </h1>
 
-          <h2 className="text-3xl font-bold text-blue-600 mb-8">
+          <h2 className="text-xl md:text-3xl font-bold text-blue-600 mb-6 md:mb-8 leading-tight">
             Supercharge your job search, applications and monitoring using
             powerful AI tools built just for you!
           </h2>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-6 md:mb-8">
             <Link
               to="/upload-cv"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-sm md:text-base"
             >
               Upload CV
             </Link>
             <Link
               to="/upload-job-description"
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-sm md:text-base"
             >
               Upload job description
             </Link>
             <Link
               to="/analyze-now"
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-sm md:text-base"
             >
               Analyze now!
             </Link>
           </div>
 
           {/* Subtitle - moved below buttons */}
-          <p className="text-xl text-orange-600 font-semibold">
+          <p className="text-lg md:text-xl text-orange-600 font-semibold leading-relaxed">
             Hack into the mind of the employer using AI and increase your odds
             of being noticed, interviewed and hired.
           </p>
@@ -116,22 +209,22 @@ function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 text-white py-8 md:py-12">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">jobna AI</h3>
-            <p className="text-gray-400 mb-6">
+            <h3 className="text-xl md:text-2xl font-bold mb-4">jobna AI</h3>
+            <p className="text-gray-400 mb-6 text-sm md:text-base leading-relaxed">
               Empowering job seekers with AI-powered tools to land their dream
               jobs faster and more effectively.
             </p>
-            <div className="flex justify-center space-x-6 mb-6">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-6 mb-6">
               <Link
                 to="/terms-of-service"
                 className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
               >
                 Terms of Service
               </Link>
-              <span className="text-gray-400 text-sm">•</span>
+              <span className="text-gray-400 text-sm hidden sm:inline">•</span>
               <Link
                 to="/privacy-policy"
                 className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
@@ -140,7 +233,9 @@ function HomePage() {
               </Link>
               {user && (
                 <>
-                  <span className="text-gray-400 text-sm">•</span>
+                  <span className="text-gray-400 text-sm hidden sm:inline">
+                    •
+                  </span>
                   <Link
                     to="/account"
                     className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
@@ -160,7 +255,7 @@ function HomePage() {
                 aria-label="LinkedIn"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 md:w-6 md:h-6"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -175,7 +270,7 @@ function HomePage() {
                 aria-label="X (Twitter)"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 md:w-6 md:h-6"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -190,7 +285,7 @@ function HomePage() {
                 aria-label="YouTube"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 md:w-6 md:h-6"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
