@@ -1,9 +1,8 @@
-const OpenAI = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize OpenAI with server-side API key
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize Gemini AI model
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 exports.handler = async (event, context) => {
   // Only allow POST requests
@@ -45,17 +44,13 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a professional HR analyst. Provide concise, actionable feedback.",
-        },
-        {
-          role: "user",
-          content: `Analyze this job description and provide:
+    console.log("🤖 Starting JD analysis with Gemini...");
+    console.log(
+      "🔍 DEBUG: GEMINI_API_KEY available:",
+      !!process.env.GEMINI_API_KEY
+    );
+
+    const prompt = `Analyze this job description and provide:
 1. Required skills (max 8 skills)
 2. Experience level required
 3. Key responsibilities (max 5 points)
@@ -64,27 +59,26 @@ exports.handler = async (event, context) => {
 Format as JSON with keys: requiredSkills, experienceLevel, responsibilities, qualifications, summary
 
 Job Description:
-${jdText}`,
-        },
-      ],
-      max_tokens: 1000,
-      temperature: 0.3,
-    });
+${jdText}`;
 
-    const response = completion.choices[0].message.content;
-    const tokensUsed = completion.usage.total_tokens;
+    console.log("📝 Sending request to Gemini...");
+    const result = await geminiModel.generateContent(prompt);
+    const response = await result.response;
+    const responseText = response.text();
+    console.log("🔍 DEBUG: Gemini response length:", responseText?.length || 0);
+    const tokensUsed = 0; // Gemini doesn't provide token usage in the same way
 
     // Parse JSON response
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(response);
+      parsedResponse = JSON.parse(responseText);
     } catch (parseError) {
       parsedResponse = {
         requiredSkills: [],
         experienceLevel: "Unknown",
         responsibilities: ["Analysis completed"],
         qualifications: ["Format could be improved"],
-        summary: response,
+        summary: responseText,
       };
     }
 

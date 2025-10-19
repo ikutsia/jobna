@@ -5,6 +5,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 exports.handler = async (event, context) => {
+  console.log("🚀 ANALYZE-MATCH FUNCTION CALLED!");
+  console.log("🔍 DEBUG: HTTP Method:", event.httpMethod);
+  console.log("🔍 DEBUG: Event body:", event.body ? "Present" : "Missing");
+
   // Handle CORS
   if (event.httpMethod === "OPTIONS") {
     return {
@@ -29,7 +33,30 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { cvText, jdText, userId } = JSON.parse(event.body);
+    console.log("🔍 DEBUG: Parsing request body...");
+    let cvText, jdText, userId;
+
+    try {
+      const parsedBody = JSON.parse(event.body);
+      cvText = parsedBody.cvText;
+      jdText = parsedBody.jdText;
+      userId = parsedBody.userId;
+    } catch (parseError) {
+      console.error("❌ JSON parsing failed:", parseError);
+      return {
+        statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({ error: "Invalid JSON in request body" }),
+      };
+    }
+
+    console.log("🔍 DEBUG: Request data:", {
+      cvTextLength: cvText?.length || 0,
+      jdTextLength: jdText?.length || 0,
+      userId: userId?.substring(0, 8) + "...",
+    });
 
     if (!cvText || !jdText || !userId) {
       return {
@@ -41,8 +68,55 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Debug: Check if Gemini API key is available
+    console.log(
+      "🔍 DEBUG: GEMINI_API_KEY available:",
+      !!process.env.GEMINI_API_KEY
+    );
+    console.log(
+      "🔍 DEBUG: GEMINI_API_KEY length:",
+      process.env.GEMINI_API_KEY?.length || 0
+    );
+
     // AI-powered ATS analysis using Gemini
     console.log("🤖 Starting AI analysis with Gemini...");
+
+    // Test: Return a simple response first to verify the function works
+    if (cvText.includes("TEST_MODE")) {
+      console.log("🧪 TEST MODE: Returning simple response");
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          success: true,
+          data: {
+            matchScore: 85,
+            skillsMatch: ["test", "mode"],
+            missingSkills: ["real", "analysis"],
+            recommendations: ["This is a test response"],
+            assessment: "Test mode - function is working!",
+            keywordAnalysis: {
+              score: 85,
+              found: 2,
+              total: 4,
+              matches: ["test", "mode"],
+              description: "2 out of 4 keywords found",
+            },
+            atsAnalysis: {
+              overallScore: 85,
+              grade: "B+",
+              breakdown: {},
+              recommendations: [],
+            },
+            modelUsed: "Test Mode",
+            analysisTimestamp: new Date().toISOString(),
+          },
+          tokensUsed: 0,
+        }),
+      };
+    }
 
     // Perform comprehensive AI analysis
     const analysisResult = await performAIAnalysis(cvText, jdText);
@@ -96,9 +170,19 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
 }`;
 
     console.log("📝 Analyzing keywords...");
-    const keywordResult = await geminiModel.generateContent(keywordPrompt);
-    const keywordResponse = await keywordResult.response;
-    const keywordText = keywordResponse.text();
+    let keywordText;
+    try {
+      const keywordResult = await geminiModel.generateContent(keywordPrompt);
+      const keywordResponse = await keywordResult.response;
+      keywordText = keywordResponse.text();
+      console.log(
+        "🔍 DEBUG: Keyword analysis response length:",
+        keywordText?.length || 0
+      );
+    } catch (error) {
+      console.error("❌ Keyword analysis failed:", error);
+      throw error;
+    }
 
     // Experience analysis
     const experiencePrompt = `Analyze the experience match between this CV and job description. Be very specific and detailed.
@@ -127,11 +211,21 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
 }`;
 
     console.log("🧠 Analyzing experience...");
-    const experienceResult = await geminiModel.generateContent(
-      experiencePrompt
-    );
-    const experienceResponse = await experienceResult.response;
-    const experienceText = experienceResponse.text();
+    let experienceText;
+    try {
+      const experienceResult = await geminiModel.generateContent(
+        experiencePrompt
+      );
+      const experienceResponse = await experienceResult.response;
+      experienceText = experienceResponse.text();
+      console.log(
+        "🔍 DEBUG: Experience analysis response length:",
+        experienceText?.length || 0
+      );
+    } catch (error) {
+      console.error("❌ Experience analysis failed:", error);
+      throw error;
+    }
 
     // Content quality analysis
     const contentPrompt = `Assess the CV content quality. Be very specific about what you find.
@@ -152,9 +246,19 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
 }`;
 
     console.log("📊 Analyzing content quality...");
-    const contentResult = await geminiModel.generateContent(contentPrompt);
-    const contentResponse = await contentResult.response;
-    const contentText = contentResponse.text();
+    let contentText;
+    try {
+      const contentResult = await geminiModel.generateContent(contentPrompt);
+      const contentResponse = await contentResult.response;
+      contentText = contentResponse.text();
+      console.log(
+        "🔍 DEBUG: Content quality analysis response length:",
+        contentText?.length || 0
+      );
+    } catch (error) {
+      console.error("❌ Content quality analysis failed:", error);
+      throw error;
+    }
 
     // Parse responses with robust JSON extraction
     const parseJsonResponse = (text, fallback = {}) => {
@@ -186,12 +290,18 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
       }
     };
 
+    console.log("🔍 DEBUG: Parsing keyword analysis...");
     const keywordAnalysis = parseJsonResponse(keywordText, {
       jobKeywords: [],
       cvKeywords: [],
       matchedKeywords: [],
       missingKeywords: [],
       matchPercentage: 0,
+    });
+    console.log("🔍 DEBUG: Keyword analysis parsed:", {
+      matchPercentage: keywordAnalysis.matchPercentage,
+      matchedCount: keywordAnalysis.matchedKeywords?.length || 0,
+      totalCount: keywordAnalysis.jobKeywords?.length || 0,
     });
 
     const experienceAnalysis = parseJsonResponse(experienceText, {
@@ -335,11 +445,18 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         },
         recommendations,
       },
-      modelUsed: "AI Analysis",
+      modelUsed: "Gemini AI",
       analysisTimestamp: new Date().toISOString(),
     };
 
     console.log("✅ AI analysis completed successfully");
+    console.log("🔍 DEBUG: Final analysis result:", {
+      matchScore: analysis.matchScore,
+      skillsMatchCount: analysis.skillsMatch?.length || 0,
+      missingSkillsCount: analysis.missingSkills?.length || 0,
+      recommendationsCount: analysis.recommendations?.length || 0,
+      atsScore: analysis.atsAnalysis?.overallScore || 0,
+    });
     return analysis;
   } catch (error) {
     console.error("AI analysis error:", error);
@@ -386,7 +503,7 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
           },
         ],
       },
-      modelUsed: "AI Analysis (Failed)",
+      modelUsed: "Gemini AI (Failed)",
       analysisTimestamp: new Date().toISOString(),
       error: error.message,
     };
