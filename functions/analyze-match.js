@@ -1,8 +1,19 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+console.log("🔧 MODULE LOADING: Starting analyze-match module...");
 
-// Initialize Gemini AI model
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+let genAI, geminiModel;
+
+try {
+  const { GoogleGenerativeAI } = require("@google/generative-ai");
+  console.log("✅ GoogleGenerativeAI imported successfully");
+
+  // Initialize Gemini AI model
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  console.log("✅ Gemini model initialized");
+} catch (error) {
+  console.error("❌ MODULE LOADING ERROR:", error);
+  throw error;
+}
 
 exports.handler = async (event, context) => {
   console.log("🚀 ANALYZE-MATCH FUNCTION CALLED!");

@@ -22,10 +22,7 @@
 #     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self';"
 
 # Redirect specific paths to index.html for SPA routing (excluding functions)
-[[redirects]]
-  from = "/"
-  to = "/index.html"
-  status = 200
+# Note: Functions are automatically excluded by Netlify
 
 [[redirects]]
   from = "/upload-cv"
@@ -56,6 +53,13 @@
   from = "/account"
   to = "/index.html"
   status = 200
+
+# Catch-all redirect for SPA routing (excludes functions)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
 
 [dev]
   command = "npm start"
