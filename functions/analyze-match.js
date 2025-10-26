@@ -8,7 +8,7 @@ try {
 
   // Initialize Gemini AI model
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
   console.log("✅ Gemini model initialized");
 } catch (error) {
   console.error("❌ MODULE LOADING ERROR:", error);
@@ -146,14 +146,38 @@ exports.handler = async (event, context) => {
   } catch (error) {
     console.error("AI Analysis error:", error);
 
+    // Provide more specific error messages
+    let errorMessage = "Internal server error";
+    let details = error.message;
+
+    if (error.message.includes("API key") || !process.env.GEMINI_API_KEY) {
+      errorMessage = "Gemini API key not configured. Please contact support.";
+      details =
+        "The GEMINI_API_KEY environment variable is missing or invalid.";
+    } else if (
+      error.message.includes("quota") ||
+      error.message.includes("limit")
+    ) {
+      errorMessage = "API quota exceeded. Please try again later.";
+      details = "The API service has reached its usage limit.";
+    } else if (
+      error.message.includes("network") ||
+      error.message.includes("timeout")
+    ) {
+      errorMessage =
+        "Network error. Please check your connection and try again.";
+      details = "Unable to connect to the AI service.";
+    }
+
     return {
       statusCode: 500,
       headers: {
         "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({
-        error: "Internal server error",
-        details: error.message,
+        error: errorMessage,
+        details: details,
+        timestamp: new Date().toISOString(),
       }),
     };
   }
@@ -162,6 +186,31 @@ exports.handler = async (event, context) => {
 // AI-powered analysis function using Gemini
 async function performAIAnalysis(cvText, jdText) {
   console.log("🤖 Starting AI analysis with Gemini...");
+
+  // CRITICAL: Check API key before attempting any analysis
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("❌ GEMINI_API_KEY is missing!");
+    throw new Error(
+      "GEMINI_API_KEY environment variable is not set. Please configure it in Netlify environment variables."
+    );
+  }
+
+  console.log(
+    "✅ GEMINI_API_KEY found, length:",
+    process.env.GEMINI_API_KEY.length
+  );
+  console.log(
+    "✅ GEMINI_API_KEY starts with:",
+    process.env.GEMINI_API_KEY.substring(0, 4)
+  );
+
+  // Validate API key format
+  if (!process.env.GEMINI_API_KEY.startsWith("AIza")) {
+    console.error("❌ Invalid GEMINI_API_KEY format!");
+    throw new Error(
+      "GEMINI_API_KEY does not have valid format. It should start with 'AIza'."
+    );
+  }
 
   try {
     // Comprehensive keyword analysis
@@ -471,30 +520,55 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
     return analysis;
   } catch (error) {
     console.error("AI analysis error:", error);
+
+    // Provide more specific error information
+    let errorType = "unknown";
+    let errorMessage = "Analysis failed - please try again";
+
+    if (error.message.includes("API key") || !process.env.GEMINI_API_KEY) {
+      errorType = "configuration";
+      errorMessage =
+        "Gemini API key not configured. Please contact support to resolve this issue.";
+    } else if (
+      error.message.includes("quota") ||
+      error.message.includes("limit")
+    ) {
+      errorType = "quota";
+      errorMessage =
+        "API quota exceeded. Please try again later or contact support.";
+    } else if (
+      error.message.includes("network") ||
+      error.message.includes("timeout")
+    ) {
+      errorType = "network";
+      errorMessage =
+        "Network error occurred. Please check your connection and try again.";
+    }
+
     return {
       matchScore: 0,
       skillsMatch: [],
       missingSkills: [],
-      recommendations: ["Analysis failed - please try again"],
-      assessment: "AI analysis encountered an error. Please try again.",
+      recommendations: [errorMessage],
+      assessment: `AI analysis encountered an error (${errorType}). ${errorMessage}`,
       keywordAnalysis: {
         score: 0,
         found: 0,
         total: 0,
         matches: [],
-        description: "Analysis failed",
+        description: `Analysis failed: ${errorType}`,
       },
       experienceAnalysis: {
         score: 0,
         yearsRequired: 0,
         yearsFound: 0,
-        quality: "Analysis failed",
+        quality: `Analysis failed: ${errorType}`,
       },
       contentQualityAnalysis: {
         score: 0,
-        achievements: "Analysis failed",
-        actionVerbs: "Analysis failed",
-        professionalTone: "Analysis failed",
+        achievements: `Analysis failed: ${errorType}`,
+        actionVerbs: `Analysis failed: ${errorType}`,
+        professionalTone: `Analysis failed: ${errorType}`,
         suggestions: [],
       },
       atsAnalysis: {
@@ -509,14 +583,16 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
           {
             type: "critical",
             title: "Analysis Failed",
-            description: "The analysis encountered an error. Please try again.",
+            description: errorMessage,
             impact: "High",
+            errorType: errorType,
           },
         ],
       },
       modelUsed: "Gemini AI (Failed)",
       analysisTimestamp: new Date().toISOString(),
       error: error.message,
+      errorType: errorType,
     };
   }
 }

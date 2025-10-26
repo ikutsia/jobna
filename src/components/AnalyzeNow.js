@@ -5,6 +5,7 @@ import {
   getRemainingCalls,
   getCostEstimate,
 } from "../firebase/openai";
+import { analyzeMatchLocal } from "../firebase/gemini-client";
 import { getCurrentUser } from "../firebase/auth";
 // AI components removed - now using single AI analysis mode
 
@@ -80,12 +81,12 @@ function AnalyzeNow() {
         throw new Error("Please log in to analyze your CV and job description");
       }
 
-      // Check usage limits
-      if (usageInfo.remainingCalls <= 0) {
-        throw new Error(
-          "Monthly API call limit reached. Please upgrade or wait until next month."
-        );
-      }
+      // Skip usage limits check for local testing with Gemini
+      // if (usageInfo.remainingCalls <= 0) {
+      //   throw new Error(
+      //     "Monthly API call limit reached. Please upgrade or wait until next month."
+      //   );
+      // }
 
       // Get actual uploaded files from localStorage
       const cvText = localStorage.getItem("cvText");
@@ -97,8 +98,8 @@ function AnalyzeNow() {
         );
       }
 
-      // Analyze match with AI
-      const results = await analyzeMatch(cvText, jdText, user.uid);
+      // Analyze match with AI (using local client for testing)
+      const results = await analyzeMatchLocal(cvText, jdText);
 
       setAnalysisResults(results);
       setAnalysisData({
@@ -114,13 +115,25 @@ function AnalyzeNow() {
 
       let errorMessage = error.message;
 
-      // Handle specific OpenAI errors
+      // Handle specific API errors
       if (error.message.includes("429") || error.message.includes("quota")) {
         errorMessage =
-          "OpenAI API quota exceeded. Please check your billing or wait until next month.";
-      } else if (error.message.includes("API key")) {
+          "API quota exceeded. Please check your billing or wait until next month.";
+      } else if (
+        error.message.includes("API key") ||
+        error.message.includes("configuration")
+      ) {
         errorMessage =
-          "OpenAI API key not configured. Please check your environment setup.";
+          "AI service not configured properly. Please contact support to resolve this issue.";
+      } else if (
+        error.message.includes("network") ||
+        error.message.includes("timeout")
+      ) {
+        errorMessage =
+          "Network error occurred. Please check your connection and try again.";
+      } else if (error.message.includes("Gemini API key not configured")) {
+        errorMessage =
+          "AI analysis service is not properly configured. Please contact support.";
       }
 
       setAnalysisData({

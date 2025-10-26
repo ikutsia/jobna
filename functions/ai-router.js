@@ -7,7 +7,7 @@ const openai = new OpenAI({
 });
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
 // Task complexity definitions
 const TASK_COMPLEXITY = {
@@ -24,7 +24,7 @@ const TASK_COMPLEXITY = {
     ],
   },
   COMPLEX: {
-    models: ["gemini-1.5-flash"],
+    models: ["gemini-2.0-flash-exp"],
     maxTokens: 2000,
     temperature: 0.3,
     tasks: [
@@ -45,7 +45,7 @@ function routeTask(taskType, content) {
   );
 
   return {
-    model: complexity === "SIMPLE" ? "gpt-3.5-turbo" : "gemini-1.5-flash",
+    model: complexity === "SIMPLE" ? "gpt-3.5-turbo" : "gemini-2.0-flash-exp",
     complexity: complexity || "SIMPLE",
     config: TASK_COMPLEXITY[complexity || "SIMPLE"],
   };
@@ -87,7 +87,7 @@ async function executeGeminiTask(prompt, config) {
     return {
       success: true,
       result: text,
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash-exp",
       tokensUsed: 0, // Gemini doesn't provide token count in the same way
     };
   } catch (error) {
@@ -95,7 +95,7 @@ async function executeGeminiTask(prompt, config) {
     return {
       success: false,
       error: error.message,
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash-exp",
     };
   }
 }
