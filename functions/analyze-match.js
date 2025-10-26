@@ -91,6 +91,11 @@ exports.handler = async (event, context) => {
 
     // AI-powered ATS analysis using Gemini
     console.log("🤖 Starting AI analysis with Gemini...");
+    console.log("🔍 GEMINI ONLY MODE: Using pure Gemini API (no OpenAI)");
+    console.log(
+      "🔍 GEMINI_API_KEY status:",
+      !!process.env.GEMINI_API_KEY ? "✅ Available" : "❌ Missing"
+    );
 
     // Test: Return a simple response first to verify the function works
     if (cvText.includes("TEST_MODE")) {
@@ -505,11 +510,12 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         },
         recommendations,
       },
-      modelUsed: "Gemini AI",
+      modelUsed: "Gemini 2.0 Flash (Pure Gemini - No OpenAI)",
       analysisTimestamp: new Date().toISOString(),
     };
 
-    console.log("✅ AI analysis completed successfully");
+    console.log("✅ GEMINI AI analysis completed successfully");
+    console.log("🎯 CONFIRMED: Used pure Gemini API (no OpenAI fallback)");
     console.log("🔍 DEBUG: Final analysis result:", {
       matchScore: analysis.matchScore,
       skillsMatchCount: analysis.skillsMatch?.length || 0,
