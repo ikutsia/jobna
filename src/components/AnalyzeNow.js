@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getRemainingCalls, getCostEstimate } from "../firebase/openai";
-import { analyzeMatchLocal } from "../firebase/gemini-client";
 import { getCurrentUser } from "../firebase/auth";
 // AI components removed - now using single AI analysis mode
 
@@ -94,8 +93,26 @@ function AnalyzeNow() {
         );
       }
 
-      // Analyze match with AI (using local client for testing)
-      const results = await analyzeMatchLocal(cvText, jdText);
+      // Analyze match with AI using server-side function
+      const response = await fetch("/.netlify/functions/analyze-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cvText,
+          jdText,
+          userId: user.uid,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Analysis failed");
+      }
+
+      const data = await response.json();
+      const results = data.data;
 
       setAnalysisResults(results);
       setAnalysisData({
