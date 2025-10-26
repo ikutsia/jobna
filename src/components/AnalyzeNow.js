@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  analyzeMatch,
-  getRemainingCalls,
-  getCostEstimate,
-} from "../firebase/openai";
+import { getRemainingCalls, getCostEstimate } from "../firebase/openai";
 import { analyzeMatchLocal } from "../firebase/gemini-client";
 import { getCurrentUser } from "../firebase/auth";
 // AI components removed - now using single AI analysis mode
