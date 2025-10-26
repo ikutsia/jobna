@@ -97,44 +97,10 @@ exports.handler = async (event, context) => {
       !!process.env.GEMINI_API_KEY ? "✅ Available" : "❌ Missing"
     );
 
-    // Test: Return a simple response first to verify the function works
-    if (cvText.includes("TEST_MODE")) {
-      console.log("🧪 TEST MODE: Returning simple response");
-      return {
-        statusCode: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          success: true,
-          data: {
-            matchScore: 85,
-            skillsMatch: ["test", "mode"],
-            missingSkills: ["real", "analysis"],
-            recommendations: ["This is a test response"],
-            assessment: "Test mode - function is working!",
-            keywordAnalysis: {
-              score: 85,
-              found: 2,
-              total: 4,
-              matches: ["test", "mode"],
-              description: "2 out of 4 keywords found",
-            },
-            atsAnalysis: {
-              overallScore: 85,
-              grade: "B+",
-              breakdown: {},
-              recommendations: [],
-            },
-            modelUsed: "Test Mode",
-            analysisTimestamp: new Date().toISOString(),
-          },
-          tokensUsed: 0,
-        }),
-      };
-    }
+    // TEST_MODE removed - always use real Gemini analysis
 
-    // Perform comprehensive AI analysis
+    // Perform comprehensive AI analysis with Gemini
+    console.log("🚀 CALLING GEMINI API FOR REAL ANALYSIS...");
     const analysisResult = await performAIAnalysis(cvText, jdText);
 
     return {
