@@ -216,28 +216,22 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
     }
 
     // Experience analysis
-    const experiencePrompt = `Analyze the experience match between this CV and job description. Be very specific and detailed.
+    const experiencePrompt = `Analyze the experience match between this CV and job description. Extract years of experience and assess quality.
 
 CV: ${cvText}
 Job Description: ${jdText}
 
-IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the JSON. Start with { and end with }.
+CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. Just pure JSON starting with { and ending with }.
 
 {
   "experienceAnalysis": {
-    "score": 85,
-    "yearsRequired": 5,
-    "yearsFound": 8,
-    "quality": "Excellent match with relevant experience",
-    "relevance": "Highly relevant experience in the same field",
-    "specificMismatches": [
-      {
-        "jobRequirement": "Specific requirement",
-        "cvInformation": "What CV shows",
-        "match": "Match assessment"
-      }
-    ],
-    "overallAssessment": "Detailed assessment of experience match"
+    "score": 75,
+    "yearsRequired": 3,
+    "yearsFound": 5,
+    "quality": "Good experience in relevant field",
+    "relevance": "Experience matches job requirements well",
+    "specificMismatches": [],
+    "overallAssessment": "Candidate has adequate experience for the role"
   }
 }`;
 
@@ -253,26 +247,32 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         "🔍 DEBUG: Experience analysis response length:",
         experienceText?.length || 0
       );
+      console.log(
+        "🔍 DEBUG: Experience response preview:",
+        experienceText?.substring(0, 200)
+      );
     } catch (error) {
       console.error("❌ Experience analysis failed:", error);
-      throw error;
+      // Don't throw error, use fallback instead
+      experienceText =
+        '{"experienceAnalysis": {"score": 50, "yearsRequired": 0, "yearsFound": 0, "quality": "Unable to analyze", "relevance": "Unable to analyze", "specificMismatches": [], "overallAssessment": "Analysis failed"}}';
     }
 
     // Content quality analysis
-    const contentPrompt = `Assess the CV content quality. Be very specific about what you find.
+    const contentPrompt = `Assess the CV content quality. Look for achievements, action verbs, and professional tone.
 
 CV: ${cvText}
 
-IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the JSON. Start with { and end with }.
+CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. Just pure JSON starting with { and ending with }.
 
 {
   "contentQuality": {
-    "score": 78,
-    "achievements": "Assessment of quantified achievements",
-    "actionVerbs": "Assessment of action verb usage",
-    "professionalTone": "Assessment of professional language",
-    "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
-    "geminiAnalysis": "This analysis was performed by AI"
+    "score": 70,
+    "achievements": "Good use of quantified achievements",
+    "actionVerbs": "Effective action verb usage",
+    "professionalTone": "Professional and clear language",
+    "suggestions": ["Add more specific metrics", "Include more action verbs"],
+    "geminiAnalysis": "Analysis completed successfully"
   }
 }`;
 
@@ -286,23 +286,33 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         "🔍 DEBUG: Content quality analysis response length:",
         contentText?.length || 0
       );
+      console.log(
+        "🔍 DEBUG: Content quality response preview:",
+        contentText?.substring(0, 200)
+      );
     } catch (error) {
       console.error("❌ Content quality analysis failed:", error);
-      throw error;
+      // Don't throw error, use fallback instead
+      contentText =
+        '{"contentQuality": {"score": 50, "achievements": "Unable to analyze", "actionVerbs": "Unable to analyze", "professionalTone": "Unable to analyze", "suggestions": [], "geminiAnalysis": "Analysis failed"}}';
     }
 
     // Parse responses with robust JSON extraction
     const parseJsonResponse = (text, fallback = {}) => {
       try {
+        console.log("🔍 DEBUG: Parsing text:", text?.substring(0, 200) + "...");
+
         // Method 1: Direct JSON object
         const directMatch = text.match(/\{[\s\S]*?\}/);
         if (directMatch) {
+          console.log("✅ Found direct JSON match");
           return JSON.parse(directMatch[0]);
         }
 
         // Method 2: JSON between code blocks
         const codeBlockMatch = text.match(/```json\s*(\{[\s\S]*?\})\s*```/);
         if (codeBlockMatch) {
+          console.log("✅ Found code block JSON match");
           return JSON.parse(codeBlockMatch[1]);
         }
 
@@ -311,12 +321,22 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
           /\{[\s\S]*"(jobKeywords|cvKeywords|experienceAnalysis|contentQuality)"[\s\S]*?\}/
         );
         if (fieldMatch) {
+          console.log("✅ Found field pattern JSON match");
           return JSON.parse(fieldMatch[0]);
         }
 
+        // Method 4: Try to find any JSON-like structure
+        const anyJsonMatch = text.match(/\{[^{}]*"[^{}]*"[^{}]*\}/);
+        if (anyJsonMatch) {
+          console.log("✅ Found any JSON match");
+          return JSON.parse(anyJsonMatch[0]);
+        }
+
+        console.log("❌ No JSON found in text");
         return fallback;
       } catch (e) {
         console.error("JSON parsing failed:", e);
+        console.error("Text that failed:", text?.substring(0, 500));
         return fallback;
       }
     };
@@ -335,6 +355,7 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
       totalCount: keywordAnalysis.jobKeywords?.length || 0,
     });
 
+    console.log("🔍 DEBUG: Parsing experience analysis...");
     const experienceAnalysis = parseJsonResponse(experienceText, {
       experienceAnalysis: {
         score: 0,
@@ -346,7 +367,9 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         overallAssessment: "Analysis failed",
       },
     });
+    console.log("🔍 DEBUG: Experience analysis parsed:", experienceAnalysis);
 
+    console.log("🔍 DEBUG: Parsing content quality analysis...");
     const contentQualityAnalysis = parseJsonResponse(contentText, {
       contentQuality: {
         score: 0,
@@ -357,6 +380,10 @@ IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the J
         geminiAnalysis: "Analysis failed",
       },
     });
+    console.log(
+      "🔍 DEBUG: Content quality analysis parsed:",
+      contentQualityAnalysis
+    );
 
     // Calculate overall score
     const scores = [

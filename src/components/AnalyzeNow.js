@@ -112,6 +112,8 @@ function AnalyzeNow() {
       }
 
       const data = await response.json();
+      console.log("🔍 Analysis Response:", data);
+      console.log("🤖 Model Used:", data.data?.modelUsed);
       const results = data.data;
 
       setAnalysisResults(results);
