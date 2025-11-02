@@ -52,28 +52,29 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 100, // Limit per sync
   },
+  // Note: Many RSS feeds return 404 - these may need to be updated or removed
   unjobs: {
     type: "rss",
     url: "https://www.unjobnet.org/feed",
-    enabled: true,
-    maxJobs: 50, // Limit per sync
+    enabled: false, // Disabled - 404 error
+    maxJobs: 50,
   },
   impactpool: {
     type: "rss",
     url: "https://www.impactpool.org/feed",
-    enabled: true,
+    enabled: false, // Disabled - 404 error
     maxJobs: 50,
   },
   idealist: {
     type: "rss",
     url: "https://www.idealist.org/en/jobs.rss",
-    enabled: true,
+    enabled: false, // Disabled - 404 error
     maxJobs: 50,
   },
   eurobrussels: {
     type: "rss",
     url: "https://www.eurobrussels.com/rss/all_jobs.xml",
-    enabled: true,
+    enabled: false, // Disabled - 404 error
     maxJobs: 50,
   },
 };
@@ -85,7 +86,8 @@ const MAX_JOBS_IN_DB = 2000; // Keep last 2000 jobs
  * Generate a unique ID for a job based on source and sourceId
  */
 function generateJobId(source, sourceId) {
-  return `${source}_${sourceId}`.replace(/[^a-zA-Z0-9_]/g, "_");
+  const cleanId = String(sourceId).replace(/[^a-zA-Z0-9_]/g, "_");
+  return `${source}_${cleanId}`;
 }
 
 /**
@@ -111,30 +113,74 @@ async function fetchReliefWebJobs() {
 
     if (response.data && response.data.data) {
       console.log(`📦 ReliefWeb items count: ${response.data.data.length}`);
+
+      // Debug: log first item structure
+      if (response.data.data.length > 0) {
+        console.log(`📦 Sample item keys:`, Object.keys(response.data.data[0]));
+        console.log(
+          `📦 Sample item.fields keys:`,
+          Object.keys(response.data.data[0].fields || {})
+        );
+        console.log(
+          `📦 Sample item fields.url:`,
+          response.data.data[0].fields?.url
+        );
+        console.log(
+          `📦 Sample item fields.url_alias:`,
+          response.data.data[0].fields?.url_alias
+        );
+        console.log(
+          `📦 Sample item fields.title:`,
+          response.data.data[0].fields?.title
+        );
+      }
+
       response.data.data.forEach((item) => {
+        // ReliefWeb API structure: item.fields contains the actual data
+        const fields = item.fields || {};
+
+        // Build job URL - ReliefWeb uses specific URL pattern
+        const jobId = item.id;
+        const jobUrl =
+          fields.url ||
+          fields.url_alias ||
+          `https://reliefweb.int/job/${jobId}`;
+
         const job = {
-          id: generateJobId("reliefweb", item.id),
-          title: item.fields?.title || "No title",
+          id: generateJobId("reliefweb", jobId),
+          title: fields.title || "No title",
           organization:
-            item.fields?.source?.[0]?.name ||
-            item.fields?.source?.name ||
+            fields.source?.[0]?.name ||
+            fields.source?.name ||
+            fields.source?.shortname ||
             "Unknown",
           location:
-            item.fields?.country?.map((c) => c.name).join(", ") ||
-            item.fields?.location?.[0]?.name ||
+            fields.country?.map((c) => c.name || c).join(", ") ||
+            fields.location?.[0]?.name ||
+            fields.city?.[0] ||
             "Location not specified",
-          link: item.fields?.url || item.fields?.url_alias || "",
-          description: item.fields?.body || item.fields?.description || "",
-          datePosted: item.fields?.date?.created || new Date().toISOString(),
+          link: jobUrl,
+          description:
+            fields.body || fields.description || fields.how_to_apply || "",
+          datePosted:
+            fields.date?.created ||
+            fields.closing_date ||
+            new Date().toISOString(),
           dateAdded: new Date().toISOString(),
           source: "reliefweb",
-          sourceId: item.id.toString(),
-          tags: item.fields?.theme?.map((t) => t.name) || [],
-          salary: item.fields?.salary || "",
+          sourceId: jobId.toString(),
+          tags:
+            fields.theme?.map((t) => t.name || t).filter(Boolean) ||
+            fields.career_categories?.map((c) => c.name || c).filter(Boolean) ||
+            [],
+          salary: fields.salary || "",
         };
 
-        if (job.link && job.title && job.title !== "No title") {
+        // Relaxed validation - only require title
+        if (job.title && job.title !== "No title") {
           jobs.push(job);
+        } else {
+          console.log(`⚠️ Skipping job with no title:`, jobId);
         }
       });
     } else {
