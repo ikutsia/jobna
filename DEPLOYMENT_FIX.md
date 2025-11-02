@@ -39,3 +39,5 @@ After deployment, test the functions:
 - Visit: `https://your-site.netlify.app/.netlify/functions/test-gemini`
 
 This should return a success response if Gemini API is configured correctly.
+
+

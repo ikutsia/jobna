@@ -54,6 +54,11 @@
   to = "/index.html"
   status = 200
 
+[[redirects]]
+  from = "/job-feed"
+  to = "/index.html"
+  status = 200
+
 # Catch-all redirect for SPA routing (excludes functions)
 [[redirects]]
   from = "/*"
