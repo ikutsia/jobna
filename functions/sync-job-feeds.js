@@ -85,12 +85,24 @@ function generateJobId(source, sourceId) {
  */
 async function fetchReliefWebJobs() {
   try {
+    console.log(`🔍 Fetching ReliefWeb from: ${FEED_SOURCES.reliefweb.url}`);
     const response = await axios.get(FEED_SOURCES.reliefweb.url, {
-      timeout: 10000,
+      timeout: 15000,
+      headers: {
+        "User-Agent": "Jobna/1.0",
+      },
     });
+
+    console.log(`📦 ReliefWeb response status: ${response.status}`);
+    console.log(
+      `📦 ReliefWeb response data keys:`,
+      Object.keys(response.data || {})
+    );
+
     const jobs = [];
 
     if (response.data && response.data.data) {
+      console.log(`📦 ReliefWeb items count: ${response.data.data.length}`);
       response.data.data.forEach((item) => {
         const job = {
           id: generateJobId("reliefweb", item.id),
@@ -113,17 +125,28 @@ async function fetchReliefWebJobs() {
           salary: item.fields?.salary || "",
         };
 
-        if (job.link && job.title) {
+        if (job.link && job.title && job.title !== "No title") {
           jobs.push(job);
         }
       });
+    } else {
+      console.log(`⚠️ ReliefWeb: No data.data in response`);
+      console.log(
+        `📦 Response structure:`,
+        JSON.stringify(response.data).substring(0, 500)
+      );
     }
 
     console.log(`✅ ReliefWeb: Fetched ${jobs.length} jobs`);
     return jobs;
   } catch (error) {
     console.error("❌ ReliefWeb fetch error:", error.message);
-    return [];
+    console.error(
+      "❌ ReliefWeb error details:",
+      error.response?.status,
+      error.response?.data
+    );
+    throw error; // Re-throw to be caught by handler
   }
 }
 
@@ -132,7 +155,12 @@ async function fetchReliefWebJobs() {
  */
 async function fetchRSSJobs(sourceName, feedUrl) {
   try {
+    console.log(`🔍 Fetching ${sourceName} RSS from: ${feedUrl}`);
     const feed = await parser.parseURL(feedUrl);
+    console.log(
+      `📦 ${sourceName} feed items count: ${feed.items?.length || 0}`
+    );
+
     const jobs = [];
 
     if (feed.items && feed.items.length > 0) {
@@ -174,17 +202,20 @@ async function fetchRSSJobs(sourceName, feedUrl) {
           salary: "",
         };
 
-        if (job.link && job.title) {
+        if (job.link && job.title && job.title !== "No title") {
           jobs.push(job);
         }
       });
+    } else {
+      console.log(`⚠️ ${sourceName}: No items in feed`);
     }
 
     console.log(`✅ ${sourceName}: Fetched ${jobs.length} jobs`);
     return jobs;
   } catch (error) {
     console.error(`❌ ${sourceName} fetch error:`, error.message);
-    return [];
+    console.error(`❌ ${sourceName} error details:`, error.stack);
+    throw error; // Re-throw to be caught by handler
   }
 }
 
@@ -261,12 +292,19 @@ exports.handler = async (event, context) => {
   try {
     const allJobs = [];
     const results = {};
+    const errors = {};
 
     // Fetch from ReliefWeb (JSON API)
     if (FEED_SOURCES.reliefweb.enabled) {
-      const reliefwebJobs = await fetchReliefWebJobs();
-      allJobs.push(...reliefwebJobs);
-      results.reliefweb = reliefwebJobs.length;
+      try {
+        const reliefwebJobs = await fetchReliefWebJobs();
+        allJobs.push(...reliefwebJobs);
+        results.reliefweb = reliefwebJobs.length;
+      } catch (error) {
+        console.error("ReliefWeb error:", error.message);
+        errors.reliefweb = error.message;
+        results.reliefweb = 0;
+      }
     }
 
     // Fetch from RSS feeds
@@ -274,9 +312,15 @@ exports.handler = async (event, context) => {
       if (sourceName === "reliefweb") continue; // Already handled
 
       if (config.enabled && config.type === "rss") {
-        const rssJobs = await fetchRSSJobs(sourceName, config.url);
-        allJobs.push(...rssJobs);
-        results[sourceName] = rssJobs.length;
+        try {
+          const rssJobs = await fetchRSSJobs(sourceName, config.url);
+          allJobs.push(...rssJobs);
+          results[sourceName] = rssJobs.length;
+        } catch (error) {
+          console.error(`${sourceName} error:`, error.message);
+          errors[sourceName] = error.message;
+          results[sourceName] = 0;
+        }
       }
     }
 
@@ -293,6 +337,7 @@ exports.handler = async (event, context) => {
       totalFetched: allJobs.length,
       bySource: results,
       storage: storageResults,
+      errors: Object.keys(errors).length > 0 ? errors : undefined,
       timestamp: new Date().toISOString(),
     };
 
