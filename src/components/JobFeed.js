@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { getCurrentUser } from "../firebase/auth";
 
@@ -17,8 +17,8 @@ function JobFeed() {
     returned: 0,
   });
 
-  // Fetch jobs from API
-  const fetchJobs = async () => {
+  // Fetch jobs from API - memoized with useCallback
+  const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -56,23 +56,21 @@ function JobFeed() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.source, filters.search, filters.sortBy, filters.sortOrder]);
 
   // Fetch jobs on component mount and when filters change
   useEffect(() => {
     fetchJobs();
-  }, [filters.source, filters.sortBy, filters.sortOrder]);
+  }, [fetchJobs]);
 
   // Handle search with debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (filters.search || !filters.search) {
-        fetchJobs();
-      }
+      fetchJobs();
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [filters.search]);
+  }, [filters.search, fetchJobs]);
 
   // Handle manual sync (trigger sync-job-feeds)
   const handleSyncJobs = async () => {
