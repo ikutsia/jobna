@@ -9,6 +9,7 @@ function JobFeed() {
   const [filters, setFilters] = useState({
     source: "all",
     search: "",
+    categories: "",
     sortBy: "datePosted",
     sortOrder: "desc",
   });
@@ -27,6 +28,7 @@ function JobFeed() {
         limit: "100",
         ...(filters.source !== "all" && { source: filters.source }),
         ...(filters.search && { search: filters.search }),
+        ...(filters.categories && { categories: filters.categories }),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       });
@@ -56,7 +58,13 @@ function JobFeed() {
     } finally {
       setLoading(false);
     }
-  }, [filters.source, filters.search, filters.sortBy, filters.sortOrder]);
+  }, [
+    filters.source,
+    filters.search,
+    filters.categories,
+    filters.sortBy,
+    filters.sortOrder,
+  ]);
 
   // Fetch jobs on component mount and when filters change
   useEffect(() => {
@@ -186,7 +194,7 @@ function JobFeed() {
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               {/* Source Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -222,6 +230,25 @@ function JobFeed() {
                   placeholder="Search jobs..."
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categories
+                </label>
+                <input
+                  type="text"
+                  value={filters.categories}
+                  onChange={(e) =>
+                    setFilters({ ...filters, categories: e.target.value })
+                  }
+                  placeholder="e.g., health, education"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Comma-separated keywords
+                </p>
               </div>
 
               {/* Sort By */}

@@ -48,30 +48,38 @@ const parser = new Parser();
 const FEED_SOURCES = {
   reliefweb: {
     type: "json",
-    url: "https://api.reliefweb.int/v1/jobs?appname=jobna&limit=50",
+    url: "https://api.reliefweb.int/v1/jobs?appname=jobna&limit=100",
     enabled: true,
+    maxJobs: 100, // Limit per sync
   },
   unjobs: {
     type: "rss",
     url: "https://www.unjobnet.org/feed",
     enabled: true,
+    maxJobs: 50, // Limit per sync
   },
   impactpool: {
     type: "rss",
     url: "https://www.impactpool.org/feed",
     enabled: true,
+    maxJobs: 50,
   },
   idealist: {
     type: "rss",
     url: "https://www.idealist.org/en/jobs.rss",
     enabled: true,
+    maxJobs: 50,
   },
   eurobrussels: {
     type: "rss",
     url: "https://www.eurobrussels.com/rss/all_jobs.xml",
     enabled: true,
+    maxJobs: 50,
   },
 };
+
+// Global job limit - only keep most recent N jobs in database
+const MAX_JOBS_IN_DB = 2000; // Keep last 2000 jobs
 
 /**
  * Generate a unique ID for a job based on source and sourceId
@@ -137,8 +145,14 @@ async function fetchReliefWebJobs() {
       );
     }
 
-    console.log(`✅ ReliefWeb: Fetched ${jobs.length} jobs`);
-    return jobs;
+    // Limit jobs per source
+    const maxJobs = FEED_SOURCES.reliefweb.maxJobs || 100;
+    const limitedJobs = jobs.slice(0, maxJobs);
+
+    console.log(
+      `✅ ReliefWeb: Fetched ${jobs.length} jobs, returning ${limitedJobs.length} (limited)`
+    );
+    return limitedJobs;
   } catch (error) {
     console.error("❌ ReliefWeb fetch error:", error.message);
     console.error(
@@ -210,12 +224,51 @@ async function fetchRSSJobs(sourceName, feedUrl) {
       console.log(`⚠️ ${sourceName}: No items in feed`);
     }
 
-    console.log(`✅ ${sourceName}: Fetched ${jobs.length} jobs`);
-    return jobs;
+    // Limit jobs per source
+    const maxJobs = FEED_SOURCES[sourceName]?.maxJobs || 50;
+    const limitedJobs = jobs.slice(0, maxJobs);
+
+    console.log(
+      `✅ ${sourceName}: Fetched ${jobs.length} jobs, returning ${limitedJobs.length} (limited)`
+    );
+    return limitedJobs;
   } catch (error) {
     console.error(`❌ ${sourceName} fetch error:`, error.message);
     console.error(`❌ ${sourceName} error details:`, error.stack);
     throw error; // Re-throw to be caught by handler
+  }
+}
+
+/**
+ * Clean up old jobs - keep only most recent N jobs
+ */
+async function cleanupOldJobs() {
+  try {
+    const jobsRef = db.collection("jobs");
+    const snapshot = await jobsRef
+      .orderBy("dateAdded", "desc")
+      .offset(MAX_JOBS_IN_DB)
+      .get();
+
+    if (snapshot.empty) {
+      console.log("✅ No old jobs to clean up");
+      return 0;
+    }
+
+    const batch = db.batch();
+    let deleted = 0;
+
+    snapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      deleted++;
+    });
+
+    await batch.commit();
+    console.log(`✅ Cleaned up ${deleted} old jobs`);
+    return deleted;
+  } catch (error) {
+    console.error("Cleanup error:", error.message);
+    return 0;
   }
 }
 
@@ -263,6 +316,10 @@ async function storeJobs(jobs) {
     console.log(
       `✅ Stored: ${stored} new, ${updated} updated, ${skipped} skipped`
     );
+
+    // Clean up old jobs after storing
+    await cleanupOldJobs();
+
     return { stored, updated, skipped };
   } catch (error) {
     console.error("Batch commit error:", error.message);

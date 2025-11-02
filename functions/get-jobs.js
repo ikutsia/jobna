@@ -71,13 +71,14 @@ exports.handler = async (event, context) => {
     const limit = parseInt(params.get("limit") || "50");
     const source = params.get("source"); // Filter by source
     const search = params.get("search"); // Search in title/description
+    const categories = params.get("categories"); // Comma-separated categories
     const sortBy = params.get("sortBy") || "datePosted"; // Sort field
     const sortOrder = params.get("sortOrder") || "desc"; // asc or desc
 
     let query = db.collection("jobs").limit(limit);
 
     // Apply source filter
-    if (source) {
+    if (source && source !== "all") {
       query = query.where("source", "==", source);
     }
 
@@ -101,7 +102,25 @@ exports.handler = async (event, context) => {
         const descMatch = job.description?.toLowerCase().includes(searchLower);
         const orgMatch = job.organization?.toLowerCase().includes(searchLower);
         const locationMatch = job.location?.toLowerCase().includes(searchLower);
-        return titleMatch || descMatch || orgMatch || locationMatch;
+        const tagsMatch = job.tags?.some((tag) =>
+          tag.toLowerCase().includes(searchLower)
+        );
+        return (
+          titleMatch || descMatch || orgMatch || locationMatch || tagsMatch
+        );
+      });
+    }
+
+    // Apply category filter (filter by tags)
+    if (categories) {
+      const categoryList = categories
+        .split(",")
+        .map((c) => c.trim().toLowerCase());
+      jobs = jobs.filter((job) => {
+        if (!job.tags || job.tags.length === 0) return false;
+        return job.tags.some((tag) =>
+          categoryList.some((cat) => tag.toLowerCase().includes(cat))
+        );
       });
     }
 
@@ -129,6 +148,7 @@ exports.handler = async (event, context) => {
       filters: {
         source: source || "all",
         search: search || "",
+        categories: categories || "",
         sortBy: sortBy,
         sortOrder: sortOrder,
       },
