@@ -401,24 +401,30 @@ function PersonalAccount() {
             </div>
 
             {/* Quick Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <button
                 onClick={() => navigate("/upload-cv")}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex-1"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Upload CV
               </button>
               <button
                 onClick={() => navigate("/upload-job-description")}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex-1"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Upload Job Description
               </button>
               <button
                 onClick={() => navigate("/analyze-now")}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex-1"
+                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Analyze Now
+              </button>
+              <button
+                onClick={() => navigate("/job-feed")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                Browse Jobs
               </button>
             </div>
           </div>
