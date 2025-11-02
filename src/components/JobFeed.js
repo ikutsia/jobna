@@ -33,22 +33,54 @@ function JobFeed() {
         sortOrder: filters.sortOrder,
       });
 
+      console.log(
+        `🔍 Fetching jobs: /.netlify/functions/get-jobs?${params.toString()}`
+      );
+
       const response = await fetch(
         `/.netlify/functions/get-jobs?${params.toString()}`
       );
 
+      console.log(`📦 Response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error("Failed to fetch jobs");
+        const errorText = await response.text();
+        console.error("❌ Response error:", errorText);
+        throw new Error(`Failed to fetch jobs: ${response.status}`);
       }
 
       const data = await response.json();
 
+      console.log("📦 Response data:", {
+        success: data.success,
+        jobsCount: data.jobs?.length || 0,
+        total: data.total,
+        returned: data.returned,
+      });
+
       if (data.success) {
-        setJobs(data.jobs || []);
+        const fetchedJobs = data.jobs || [];
+        setJobs(fetchedJobs);
         setStats({
           total: data.total || 0,
-          returned: data.returned || 0,
+          returned: fetchedJobs.length,
         });
+
+        console.log(`✅ Loaded ${fetchedJobs.length} jobs from API`);
+
+        if (fetchedJobs.length === 0) {
+          if (data.total > 0) {
+            setError(
+              "No jobs match your current filters. Try adjusting your search criteria."
+            );
+          } else {
+            setError(
+              "No jobs found. Click 'Sync Jobs' to fetch jobs from job sites."
+            );
+          }
+        } else {
+          setError(null); // Clear any previous errors
+        }
       } else {
         throw new Error(data.error || "Failed to fetch jobs");
       }
@@ -68,6 +100,7 @@ function JobFeed() {
 
   // Fetch jobs on component mount and when filters change
   useEffect(() => {
+    // Initial load
     fetchJobs();
   }, [fetchJobs]);
 
@@ -84,6 +117,8 @@ function JobFeed() {
   const handleSyncJobs = async () => {
     try {
       setLoading(true);
+      setError(null);
+
       const response = await fetch("/.netlify/functions/sync-job-feeds", {
         method: "POST",
       });
@@ -95,10 +130,26 @@ function JobFeed() {
       const data = await response.json();
       console.log("Sync result:", data);
 
-      // Refresh jobs after sync
-      setTimeout(() => {
-        fetchJobs();
-      }, 2000);
+      // Show success message
+      if (data.success && data.totalFetched > 0) {
+        setError(null);
+        // Wait a bit for Firestore to be ready, then refresh
+        setTimeout(() => {
+          fetchJobs();
+        }, 3000);
+      } else if (data.success && data.totalFetched === 0) {
+        setError(
+          "Sync completed but no new jobs found. Some feeds may be unavailable."
+        );
+        setTimeout(() => {
+          fetchJobs();
+        }, 2000);
+      } else {
+        setError(data.error || "Sync completed with errors");
+        setTimeout(() => {
+          fetchJobs();
+        }, 2000);
+      }
     } catch (err) {
       console.error("Sync error:", err);
       setError(err.message);

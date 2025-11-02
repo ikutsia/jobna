@@ -68,22 +68,59 @@ exports.handler = async (event, context) => {
 
     // Parse query parameters
     const params = new URLSearchParams(event.queryStringParameters || {});
-    const limit = parseInt(params.get("limit") || "50");
+    const limit = parseInt(params.get("limit") || "100");
     const source = params.get("source"); // Filter by source
     const search = params.get("search"); // Search in title/description
     const categories = params.get("categories"); // Comma-separated categories
     const sortBy = params.get("sortBy") || "datePosted"; // Sort field
     const sortOrder = params.get("sortOrder") || "desc"; // asc or desc
 
-    let query = db.collection("jobs").limit(limit);
+    console.log(
+      `🔍 Query params: limit=${limit}, source=${source}, search=${search}`
+    );
 
-    // Apply source filter
+    let query = db.collection("jobs");
+
+    // Apply source filter first
     if (source && source !== "all") {
       query = query.where("source", "==", source);
+      console.log(`🔍 Filtering by source: ${source}`);
     }
 
-    // Get jobs
-    const snapshot = await query.get();
+    // Don't use orderBy if we have a source filter (needs composite index)
+    // Just get jobs and sort in memory instead
+    let snapshot;
+    try {
+      // Apply limit
+      query = query.limit(limit);
+
+      // Only try orderBy if no source filter (to avoid index requirement)
+      if (!source || source === "all") {
+        try {
+          query = query.orderBy("datePosted", "desc");
+          console.log("✅ Using orderBy datePosted");
+        } catch (error) {
+          console.log("⚠️ Could not orderBy:", error.message);
+          console.log("⚠️ Getting jobs without orderBy, will sort in memory");
+        }
+      } else {
+        console.log(
+          "⚠️ Skipping orderBy (has source filter, will sort in memory)"
+        );
+      }
+
+      snapshot = await query.get();
+      console.log(`📦 Firestore returned ${snapshot.size} documents`);
+    } catch (error) {
+      console.error("❌ Query error:", error.message);
+      // Fallback: try without orderBy
+      query = db.collection("jobs").limit(limit);
+      if (source && source !== "all") {
+        query = query.where("source", "==", source);
+      }
+      snapshot = await query.get();
+      console.log(`📦 Fallback query returned ${snapshot.size} documents`);
+    }
     let jobs = [];
 
     snapshot.forEach((doc) => {
@@ -93,6 +130,20 @@ exports.handler = async (event, context) => {
         ...data,
       });
     });
+
+    console.log(
+      `📦 Retrieved ${jobs.length} jobs from Firestore (before filtering)`
+    );
+
+    // If no jobs but we have a limit, check if collection has any jobs at all
+    if (jobs.length === 0 && limit > 0) {
+      const testSnapshot = await db.collection("jobs").limit(1).get();
+      console.log(
+        `📦 Total jobs in collection: ${
+          testSnapshot.size > 0 ? "Has jobs" : "Empty"
+        }`
+      );
+    }
 
     // Apply search filter (client-side since Firestore text search is limited)
     if (search) {
@@ -124,10 +175,27 @@ exports.handler = async (event, context) => {
       });
     }
 
-    // Sort jobs
+    // Sort jobs in memory (since Firestore ordering may not work)
     jobs.sort((a, b) => {
-      const aValue = a[sortBy] || "";
-      const bValue = b[sortBy] || "";
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      // Handle date strings
+      if (sortBy.includes("date")) {
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
+      }
+
+      // Handle string values
+      if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase();
+      }
+      if (typeof bValue === "string") {
+        bValue = bValue.toLowerCase();
+      }
+
+      if (!aValue) aValue = "";
+      if (!bValue) bValue = "";
 
       if (sortOrder === "desc") {
         return bValue > aValue ? 1 : bValue < aValue ? -1 : 0;
@@ -135,6 +203,8 @@ exports.handler = async (event, context) => {
         return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       }
     });
+
+    console.log(`✅ Returning ${jobs.length} jobs after filtering and sorting`);
 
     // Get total count (for pagination info)
     const totalSnapshot = await db.collection("jobs").get();
