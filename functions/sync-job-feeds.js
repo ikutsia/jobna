@@ -216,7 +216,28 @@ async function fetchReliefWebJobs() {
 async function fetchRSSJobs(sourceName, feedUrl) {
   try {
     console.log(`🔍 Fetching ${sourceName} RSS from: ${feedUrl}`);
-    const feed = await parser.parseURL(feedUrl);
+
+    const response = await axios.get(feedUrl, {
+      timeout: 15000,
+      headers: {
+        "User-Agent": "Jobna/1.0",
+        Accept: "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8",
+      },
+      maxContentLength: 10 * 1024 * 1024, // 10 MB max
+    });
+
+    console.log(`📦 ${sourceName} response status: ${response.status}`);
+
+    if (!response.data) {
+      console.log(`⚠️ ${sourceName}: Response had no body`);
+      return [];
+    }
+
+    const feed = await parser.parseString(response.data);
+
+    console.log(
+      `📦 ${sourceName} feed title: ${feed.title || "(no title)"}`
+    );
     console.log(
       `📦 ${sourceName} feed items count: ${feed.items?.length || 0}`
     );
@@ -244,7 +265,9 @@ async function fetchRSSJobs(sourceName, feedUrl) {
         // Extract organization from available text
         let organization = item.creator || item.author || "Unknown";
         for (const text of textSources) {
-          const orgMatch = text.match(/(organization|agency|employer)[:\-]?\s*([^<,\n]+)/i);
+          const orgMatch = text.match(
+            /(organization|agency|employer)[:\-]?\s*([^<,\n]+)/i
+          );
           if (orgMatch) {
             organization = orgMatch[2].trim();
             break;
@@ -255,7 +278,6 @@ async function fetchRSSJobs(sourceName, feedUrl) {
         let cleanedTitle = rawTitle;
 
         if (sourceName === "unjobs") {
-          // Example title format: "UNDP: Programme Analyst, Manila, Philippines"
           if (rawTitle.includes(":")) {
             const [possibleOrg, ...rest] = rawTitle.split(":");
             const remainder = rest.join(":").trim();
@@ -267,7 +289,6 @@ async function fetchRSSJobs(sourceName, feedUrl) {
             }
           }
 
-          // Attempt to split location from title (last comma-separated value)
           if (cleanedTitle.includes(",")) {
             const parts = cleanedTitle.split(",");
             const possibleLocation = parts[parts.length - 1].trim();
@@ -277,11 +298,11 @@ async function fetchRSSJobs(sourceName, feedUrl) {
               location === "Location not specified"
             ) {
               location = possibleLocation;
-              cleanedTitle = parts.slice(0, -1).join(",").trim() || cleanedTitle;
+              cleanedTitle =
+                parts.slice(0, -1).join(",").trim() || cleanedTitle;
             }
           }
 
-          // Look for location in description if still missing
           if (location === "Location not specified") {
             const dutyMatch = textSources
               .join(" ")
@@ -291,13 +312,13 @@ async function fetchRSSJobs(sourceName, feedUrl) {
             }
           }
 
-          // Fall back to categories for organization/location hints
           if (Array.isArray(item.categories) && item.categories.length > 0) {
             if (!organization || organization === "Unknown") {
               organization = item.categories[0].trim();
             }
             if (location === "Location not specified") {
-              const lastCategory = item.categories[item.categories.length - 1].trim();
+              const lastCategory =
+                item.categories[item.categories.length - 1].trim();
               if (lastCategory) {
                 location = lastCategory;
               }
@@ -339,7 +360,6 @@ async function fetchRSSJobs(sourceName, feedUrl) {
       console.log(`⚠️ ${sourceName}: No items in feed`);
     }
 
-    // Limit jobs per source
     const maxJobs = FEED_SOURCES[sourceName]?.maxJobs || 50;
     const limitedJobs = jobs.slice(0, maxJobs);
 
@@ -349,6 +369,13 @@ async function fetchRSSJobs(sourceName, feedUrl) {
     return limitedJobs;
   } catch (error) {
     console.error(`❌ ${sourceName} fetch error:`, error.message);
+    if (error.response) {
+      console.error(
+        `❌ ${sourceName} response error:`,
+        error.response.status,
+        error.response.data?.slice?.(0, 200) || error.response.data
+      );
+    }
     console.error(`❌ ${sourceName} error details:`, error.stack);
     throw error; // Re-throw to be caught by handler
   }
