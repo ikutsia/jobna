@@ -52,6 +52,12 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 100, // Limit per sync
   },
+  workingnomads: {
+    type: "rss",
+    url: "https://www.workingnomads.com/jobs/feed",
+    enabled: true,
+    maxJobs: 50,
+  },
   unjobs: {
     type: "rss",
     url: "https://unjobs.org/skills/rss",
@@ -323,6 +329,34 @@ async function fetchRSSJobs(sourceName, feedUrl) {
                 location = lastCategory;
               }
             }
+          }
+        }
+
+        if (sourceName === "workingnomads") {
+          // Working Nomads titles often look like "Company: Role (Remote)"
+          if (rawTitle.includes(":")) {
+            const [possibleOrg, ...rest] = rawTitle.split(":");
+            const remainder = rest.join(":").trim();
+            if (possibleOrg) {
+              organization = possibleOrg.trim();
+            }
+            if (remainder) {
+              cleanedTitle = remainder;
+            }
+          }
+
+          if (cleanedTitle.includes("(")) {
+            const match = cleanedTitle.match(/^(.*)\((.*)\)$/);
+            if (match) {
+              cleanedTitle = match[1].trim();
+              if (!location || location === "Location not specified") {
+                location = match[2].trim();
+              }
+            }
+          }
+
+          if (!location || location === "Location not specified") {
+            location = "Remote";
           }
         }
 

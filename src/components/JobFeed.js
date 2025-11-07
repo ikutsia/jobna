@@ -212,8 +212,7 @@ function JobFeed() {
                 Job Feed Aggregator
               </h1>
               <p className="text-gray-600">
-                Browse jobs from ReliefWeb, UN Jobs, ImpactPool, Idealist, and
-                EuroBrussels
+                Browse jobs from ReliefWeb, Working Nomads, and UN Jobs
               </p>
             </div>
             <button
@@ -260,10 +259,8 @@ function JobFeed() {
                 >
                   <option value="all">All Sources</option>
                   <option value="reliefweb">ReliefWeb</option>
+                  <option value="workingnomads">Working Nomads</option>
                   <option value="unjobs">UN Jobs</option>
-                  <option value="impactpool">ImpactPool</option>
-                  <option value="idealist">Idealist</option>
-                  <option value="eurobrussels">EuroBrussels</option>
                 </select>
               </div>
 
