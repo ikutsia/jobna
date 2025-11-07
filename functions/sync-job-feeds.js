@@ -52,13 +52,13 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 100, // Limit per sync
   },
-  // Note: Many RSS feeds return 404 - these may need to be updated or removed
   unjobs: {
     type: "rss",
-    url: "https://www.unjobnet.org/feed",
-    enabled: false, // Disabled - 404 error
+    url: "https://unjobs.org/skills/rss",
+    enabled: true,
     maxJobs: 50,
   },
+  // Additional sources can be re-enabled once reliable feeds are confirmed
   impactpool: {
     type: "rss",
     url: "https://www.impactpool.org/feed",
@@ -225,45 +225,114 @@ async function fetchRSSJobs(sourceName, feedUrl) {
 
     if (feed.items && feed.items.length > 0) {
       feed.items.forEach((item, index) => {
-        // Extract location from description or content
+        const textSources = [item.contentSnippet, item.content, item.summary]
+          .filter(Boolean)
+          .map((text) => text.replace(/\s+/g, " "));
+
+        // Extract location from available text
         let location = "Location not specified";
-        if (item.contentSnippet || item.content) {
-          const content = item.contentSnippet || item.content;
-          const locationMatch = content.match(/location:?\s*([^<,\n]+)/i);
+        for (const text of textSources) {
+          const locationMatch = text.match(
+            /(duty station|duty location|location)[:\-]?\s*([^<,\n]+)/i
+          );
           if (locationMatch) {
-            location = locationMatch[1].trim();
+            location = locationMatch[2].trim();
+            break;
           }
         }
 
-        // Extract organization
+        // Extract organization from available text
         let organization = item.creator || item.author || "Unknown";
-        if (item.contentSnippet || item.content) {
-          const orgMatch = (item.contentSnippet || item.content).match(
-            /organization:?\s*([^<,\n]+)/i
-          );
+        for (const text of textSources) {
+          const orgMatch = text.match(/(organization|agency|employer)[:\-]?\s*([^<,\n]+)/i);
           if (orgMatch) {
-            organization = orgMatch[1].trim();
+            organization = orgMatch[2].trim();
+            break;
           }
         }
+
+        let rawTitle = item.title || "No title";
+        let cleanedTitle = rawTitle;
+
+        if (sourceName === "unjobs") {
+          // Example title format: "UNDP: Programme Analyst, Manila, Philippines"
+          if (rawTitle.includes(":")) {
+            const [possibleOrg, ...rest] = rawTitle.split(":");
+            const remainder = rest.join(":").trim();
+            if (possibleOrg && (!organization || organization === "Unknown")) {
+              organization = possibleOrg.trim();
+            }
+            if (remainder) {
+              cleanedTitle = remainder;
+            }
+          }
+
+          // Attempt to split location from title (last comma-separated value)
+          if (cleanedTitle.includes(",")) {
+            const parts = cleanedTitle.split(",");
+            const possibleLocation = parts[parts.length - 1].trim();
+            if (
+              possibleLocation &&
+              possibleLocation.length <= 80 &&
+              location === "Location not specified"
+            ) {
+              location = possibleLocation;
+              cleanedTitle = parts.slice(0, -1).join(",").trim() || cleanedTitle;
+            }
+          }
+
+          // Look for location in description if still missing
+          if (location === "Location not specified") {
+            const dutyMatch = textSources
+              .join(" ")
+              .match(/duty station[:\-]?\s*([^<,\n]+)/i);
+            if (dutyMatch) {
+              location = dutyMatch[1].trim();
+            }
+          }
+
+          // Fall back to categories for organization/location hints
+          if (Array.isArray(item.categories) && item.categories.length > 0) {
+            if (!organization || organization === "Unknown") {
+              organization = item.categories[0].trim();
+            }
+            if (location === "Location not specified") {
+              const lastCategory = item.categories[item.categories.length - 1].trim();
+              if (lastCategory) {
+                location = lastCategory;
+              }
+            }
+          }
+        }
+
+        const jobLink =
+          item.link || (typeof item.guid === "string" ? item.guid : "");
 
         const job = {
           id: generateJobId(sourceName, item.guid || item.link || index),
-          title: item.title || "No title",
-          organization: organization,
-          location: location,
-          link: item.link || "",
+          title: cleanedTitle || rawTitle || "No title",
+          organization: organization || "Unknown",
+          location: location || "Location not specified",
+          link: jobLink,
           description:
             item.contentSnippet || item.content || item.summary || "",
           datePosted: item.pubDate || item.isoDate || new Date().toISOString(),
           dateAdded: new Date().toISOString(),
           source: sourceName,
           sourceId: item.guid || item.link || index.toString(),
-          tags: item.categories || [],
+          tags: Array.isArray(item.categories)
+            ? item.categories.map((tag) => tag.trim()).filter(Boolean)
+            : [],
           salary: "",
         };
 
-        if (job.link && job.title && job.title !== "No title") {
+        if (job.title && job.title !== "No title" && job.link) {
           jobs.push(job);
+        } else {
+          console.log(`⚠️ Skipping ${sourceName} job due to missing title or link`, {
+            title: job.title,
+            link: job.link,
+          });
         }
       });
     } else {
