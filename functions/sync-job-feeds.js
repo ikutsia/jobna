@@ -61,13 +61,13 @@ const FEED_SOURCES = {
   remoteok: {
     type: "rss",
     url: "https://remoteok.com/remote-jobs.rss",
-    enabled: true,
+    enabled: false, // Disabled - 403 (VPN/IP block)
     maxJobs: 50,
   },
   unjobs: {
     type: "rss",
     url: "https://unjobs.org/skills/rss",
-    enabled: true,
+    enabled: false, // Disabled - Cloudflare challenge / invalid XML
     maxJobs: 50,
   },
   // Additional sources can be re-enabled once reliable feeds are confirmed
