@@ -58,6 +58,12 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 50,
   },
+  adzuna: {
+    type: "json",
+    enabled: true,
+    maxJobs: 50,
+    country: process.env.ADZUNA_COUNTRY || "us",
+  },
   remoteok: {
     type: "rss",
     url: "https://remoteok.com/remote-jobs.rss",
@@ -449,6 +455,115 @@ async function fetchRSSJobs(sourceName, feedUrl) {
   }
 }
 
+async function fetchAdzunaJobs() {
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
+  const config = FEED_SOURCES.adzuna || {};
+
+  if (!appId || !appKey) {
+    throw new Error("Adzuna credentials not configured. Set ADZUNA_APP_ID and ADZUNA_APP_KEY in environment variables.");
+  }
+
+  const country = config.country || "us";
+  const resultsPerPage = config.maxJobs || 50;
+  const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1`;
+
+  try {
+    console.log(
+      `🔍 Fetching Adzuna from: ${url} (results_per_page=${resultsPerPage})`
+    );
+
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        "User-Agent": "Jobna/1.0",
+      },
+      params: {
+        app_id: appId,
+        app_key: appKey,
+        results_per_page: resultsPerPage,
+        content_type: "application/json",
+      },
+    });
+
+    const results = response.data?.results || [];
+    console.log(`📦 Adzuna results count: ${results.length}`);
+
+    const jobs = results
+      .map((item) => {
+        const jobId = item.id || item.created || item.redirect_url;
+        if (!jobId || !item.redirect_url || !item.title) {
+          return null;
+        }
+
+        const organization =
+          item.company?.display_name || item.category?.label || "Unknown";
+
+        const location =
+          item.location?.display_name ||
+          (Array.isArray(item.location?.area)
+            ? item.location.area.join(", ")
+            : "Location not specified");
+
+        const tags = [];
+        if (item.category?.label) {
+          tags.push(item.category.label);
+        }
+        if (Array.isArray(item.tags)) {
+          item.tags.forEach((tag) => {
+            if (tag && !tags.includes(tag)) {
+              tags.push(tag);
+            }
+          });
+        }
+
+        const salary =
+          item.salary_min && item.salary_max
+            ? `${item.salary_min} - ${item.salary_max}`
+            : item.salary_min
+            ? `${item.salary_min}`
+            : item.salary_max
+            ? `${item.salary_max}`
+            : "";
+
+        return {
+          id: generateJobId("adzuna", jobId),
+          title: item.title,
+          organization,
+          location,
+          link: item.redirect_url,
+          description: item.description || "",
+          datePosted: item.created || new Date().toISOString(),
+          dateAdded: new Date().toISOString(),
+          source: "adzuna",
+          sourceId: String(jobId),
+          tags,
+          salary,
+        };
+      })
+      .filter(Boolean);
+
+    console.log(
+      `✅ Adzuna: Fetched ${jobs.length} jobs, returning ${Math.min(
+        jobs.length,
+        resultsPerPage
+      )} (limited)`
+    );
+
+    return jobs.slice(0, resultsPerPage);
+  } catch (error) {
+    console.error("❌ Adzuna fetch error:", error.message);
+    if (error.response) {
+      console.error(
+        "❌ Adzuna error details:",
+        error.response.status,
+        error.response.data
+      );
+    }
+    throw error;
+  }
+}
+
 /**
  * Clean up old jobs - keep only most recent N jobs
  */
@@ -574,9 +689,22 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // Fetch from Adzuna (JSON API)
+    if (FEED_SOURCES.adzuna?.enabled) {
+      try {
+        const adzunaJobs = await fetchAdzunaJobs();
+        allJobs.push(...adzunaJobs);
+        results.adzuna = adzunaJobs.length;
+      } catch (error) {
+        console.error("Adzuna error:", error.message);
+        errors.adzuna = error.message;
+        results.adzuna = 0;
+      }
+    }
+
     // Fetch from RSS feeds
     for (const [sourceName, config] of Object.entries(FEED_SOURCES)) {
-      if (sourceName === "reliefweb") continue; // Already handled
+      if (sourceName === "reliefweb" || sourceName === "adzuna") continue;
 
       if (config.enabled && config.type === "rss") {
         try {

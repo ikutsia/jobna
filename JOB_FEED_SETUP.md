@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the RSS feed aggregator functionality that currently fetches jobs from ReliefWeb and DevJobsIndo (other sources can be re-enabled once stable feeds are available; UN Jobs and Remote OK remain disabled because of access blocks). DevJobsIndo currently exposes its feed over HTTP only—HTTPS requests fail because the SSL certificate is misconfigured.
+This guide explains how to set up the RSS/API feed aggregator functionality that currently fetches jobs from ReliefWeb, DevJobsIndo, and Adzuna (other sources can be re-enabled once stable feeds are available; feeds such as UN Jobs or Remote OK remain disabled because of access blocks). DevJobsIndo currently exposes its feed over HTTP only—HTTPS requests fail because the SSL certificate is misconfigured.
 
 ## 🏗️ Architecture
 
@@ -56,6 +56,10 @@ Add these to Netlify Dashboard → Site Settings → Environment Variables:
 ```
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}  # Full JSON
+RELIEFWEB_APPNAME=your-approved-appname   # optional but recommended
+ADZUNA_APP_ID=xxxxxxxx
+ADZUNA_APP_KEY=xxxxxxxx
+ADZUNA_COUNTRY=us   # optional, defaults to 'us'
 ```
 
 ### 4. Firestore Security Rules
@@ -126,14 +130,15 @@ Fetches jobs from all sources and stores them in Firestore.
 ```json
 {
   "success": true,
-  "totalFetched": 140,
+  "totalFetched": 190,
   "bySource": {
     "reliefweb": 90,
-    "devjobsindo": 50
+    "devjobsindo": 50,
+    "adzuna": 50
   },
   "storage": {
-    "stored": 110,
-    "updated": 30,
+    "stored": 140,
+    "updated": 50,
     "skipped": 0
   }
 }
@@ -148,7 +153,7 @@ Retrieves jobs from Firestore with filtering.
 **Query Parameters**:
 
 - `limit`: Number of jobs to return (default: 50)
-- `source`: Filter by source (`reliefweb`, `devjobsindo`)
+- `source`: Filter by source (`reliefweb`, `devjobsindo`, `adzuna`)
 - `search`: Search in title/description/organization/location
 - `sortBy`: Sort field (datePosted, dateAdded, title, organization)
 - `sortOrder`: asc or desc (default: desc)
@@ -182,7 +187,7 @@ Jobs are stored in Firestore with this structure:
 
 ## 🎨 Features
 
-- **Multi-source aggregation**: Fetches from ReliefWeb and DevJobsIndo (other feeds such as UN Jobs and Remote OK are currently disabled)
+- **Multi-source aggregation**: Fetches from ReliefWeb, DevJobsIndo, and Adzuna (other feeds such as UN Jobs and Remote OK are currently disabled)
 - **Unified format**: All jobs normalized to same structure
 - **Search & filter**: Filter by source, search text, sort options
 - **CV Analysis integration**: Click "Analyze Match" to analyze job with your CV

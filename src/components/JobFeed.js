@@ -212,7 +212,7 @@ function JobFeed() {
                 Job Feed Aggregator
               </h1>
               <p className="text-gray-600">
-                Browse jobs from ReliefWeb and DevJobsIndo
+                Browse jobs from ReliefWeb, DevJobsIndo, and Adzuna
               </p>
             </div>
             <button
@@ -260,6 +260,7 @@ function JobFeed() {
                   <option value="all">All Sources</option>
                   <option value="reliefweb">ReliefWeb</option>
                   <option value="devjobsindo">DevJobsIndo</option>
+                  <option value="adzuna">Adzuna</option>
                 </select>
               </div>
 
