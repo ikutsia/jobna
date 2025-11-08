@@ -58,6 +58,12 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 50,
   },
+  remoteok: {
+    type: "rss",
+    url: "https://remoteok.com/remote-jobs.rss",
+    enabled: true,
+    maxJobs: 50,
+  },
   unjobs: {
     type: "rss",
     url: "https://unjobs.org/skills/rss",
@@ -358,6 +364,30 @@ async function fetchRSSJobs(sourceName, feedUrl) {
             if (!organization || organization === "Unknown") {
               organization = item.categories[0].trim();
             }
+          }
+        }
+
+        if (sourceName === "remoteok") {
+          // Title format often "Company: Role"
+          if (rawTitle.includes(":")) {
+            const [possibleOrg, ...rest] = rawTitle.split(":");
+            if (possibleOrg) {
+              organization = possibleOrg.trim();
+            }
+            const remainder = rest.join(":").trim();
+            if (remainder) {
+              cleanedTitle = remainder;
+            }
+          }
+
+          // Many postings include tags; keep them as tags
+          if (Array.isArray(item.tags) && item.tags.length > 0) {
+            job.tags = item.tags.map((tag) => tag.trim());
+          }
+
+          // Remote OK posts are remote by default
+          if (!location || location === "Location not specified") {
+            location = "Remote";
           }
         }
 

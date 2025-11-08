@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the RSS feed aggregator functionality that currently fetches jobs from ReliefWeb and DevJobsIndo (UN Jobs remains optional but is often blocked by Cloudflare; other sources can be re-enabled once stable feeds are available). DevJobsIndo currently exposes its feed over HTTP only—HTTPS requests fail because the SSL certificate is misconfigured.
+This guide explains how to set up the RSS feed aggregator functionality that currently fetches jobs from ReliefWeb, DevJobsIndo, and Remote OK (UN Jobs remains optional but is often blocked by Cloudflare; other sources can be re-enabled once stable feeds are available). DevJobsIndo currently exposes its feed over HTTP only—HTTPS requests fail because the SSL certificate is misconfigured.
 
 ## 🏗️ Architecture
 
@@ -126,14 +126,15 @@ Fetches jobs from all sources and stores them in Firestore.
 ```json
 {
   "success": true,
-  "totalFetched": 140,
+  "totalFetched": 190,
   "bySource": {
     "reliefweb": 90,
-    "devjobsindo": 50
+    "devjobsindo": 50,
+    "remoteok": 50
   },
   "storage": {
-    "stored": 110,
-    "updated": 30,
+    "stored": 150,
+    "updated": 40,
     "skipped": 0
   }
 }
@@ -148,7 +149,7 @@ Retrieves jobs from Firestore with filtering.
 **Query Parameters**:
 
 - `limit`: Number of jobs to return (default: 50)
-- `source`: Filter by source (`reliefweb`, `devjobsindo`, `unjobs`)
+- `source`: Filter by source (`reliefweb`, `devjobsindo`, `remoteok`, `unjobs`)
 - `search`: Search in title/description/organization/location
 - `sortBy`: Sort field (datePosted, dateAdded, title, organization)
 - `sortOrder`: asc or desc (default: desc)
@@ -182,7 +183,7 @@ Jobs are stored in Firestore with this structure:
 
 ## 🎨 Features
 
-- **Multi-source aggregation**: Fetches from ReliefWeb and DevJobsIndo (UN Jobs integration is available but may be empty if Cloudflare blocks the feed)
+- **Multi-source aggregation**: Fetches from ReliefWeb, DevJobsIndo, and Remote OK (UN Jobs integration is available but may be empty if Cloudflare blocks the feed)
 - **Unified format**: All jobs normalized to same structure
 - **Search & filter**: Filter by source, search text, sort options
 - **CV Analysis integration**: Click "Analyze Match" to analyze job with your CV
