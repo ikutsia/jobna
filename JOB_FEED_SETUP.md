@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the RSS feed aggregator functionality that currently fetches jobs from ReliefWeb and DevJobsIndo (UN Jobs remains optional but is often blocked by Cloudflare; other sources can be re-enabled once stable feeds are available).
+This guide explains how to set up the RSS feed aggregator functionality that currently fetches jobs from ReliefWeb and DevJobsIndo (UN Jobs remains optional but is often blocked by Cloudflare; other sources can be re-enabled once stable feeds are available). DevJobsIndo currently exposes its feed over HTTP only—HTTPS requests fail because the SSL certificate is misconfigured.
 
 ## 🏗️ Architecture
 
