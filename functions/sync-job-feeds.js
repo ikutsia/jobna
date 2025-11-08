@@ -52,9 +52,9 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 100, // Limit per sync
   },
-  workingnomads: {
+  devjobsindo: {
     type: "rss",
-    url: "https://www.workingnomads.com/jobs/feed",
+    url: "https://www.devjobsindo.org/feed/",
     enabled: true,
     maxJobs: 50,
   },
@@ -332,31 +332,32 @@ async function fetchRSSJobs(sourceName, feedUrl) {
           }
         }
 
-        if (sourceName === "workingnomads") {
-          // Working Nomads titles often look like "Company: Role (Remote)"
-          if (rawTitle.includes(":")) {
-            const [possibleOrg, ...rest] = rawTitle.split(":");
-            const remainder = rest.join(":").trim();
-            if (possibleOrg) {
-              organization = possibleOrg.trim();
-            }
-            if (remainder) {
-              cleanedTitle = remainder;
+        if (sourceName === "devjobsindo") {
+          // Titles often include location after a dash, e.g., "Project Manager – Jakarta"
+          const dashMatch = cleanedTitle.match(/(.+)[–-]\s*(.+)/);
+          if (dashMatch) {
+            cleanedTitle = dashMatch[1].trim();
+            if (location === "Location not specified") {
+              location = dashMatch[2].trim();
             }
           }
 
-          if (cleanedTitle.includes("(")) {
-            const match = cleanedTitle.match(/^(.*)\((.*)\)$/);
-            if (match) {
-              cleanedTitle = match[1].trim();
-              if (!location || location === "Location not specified") {
-                location = match[2].trim();
+          // Look for "Location:" pattern in content
+          if (location === "Location not specified") {
+            for (const text of textSources) {
+              const locMatch = text.match(/location[:\-]\s*([^<\n]+)/i);
+              if (locMatch) {
+                location = locMatch[1].trim();
+                break;
               }
             }
           }
 
-          if (!location || location === "Location not specified") {
-            location = "Remote";
+          // WordPress feeds usually include categories; map them to tags and organization hints
+          if (Array.isArray(item.categories) && item.categories.length > 0) {
+            if (!organization || organization === "Unknown") {
+              organization = item.categories[0].trim();
+            }
           }
         }
 

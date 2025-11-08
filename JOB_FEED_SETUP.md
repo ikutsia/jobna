@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the RSS feed aggregator functionality that fetches jobs from ReliefWeb, Working Nomads, and UN Jobs (with additional sources ready to be re-enabled once stable feeds are available).
+This guide explains how to set up the RSS feed aggregator functionality that currently fetches jobs from ReliefWeb and DevJobsIndo (UN Jobs remains optional but is often blocked by Cloudflare; other sources can be re-enabled once stable feeds are available).
 
 ## 🏗️ Architecture
 
@@ -126,15 +126,14 @@ Fetches jobs from all sources and stores them in Firestore.
 ```json
 {
   "success": true,
-  "totalFetched": 150,
+  "totalFetched": 140,
   "bySource": {
-    "reliefweb": 70,
-    "workingnomads": 40,
-    "unjobs": 40
+    "reliefweb": 90,
+    "devjobsindo": 50
   },
   "storage": {
     "stored": 110,
-    "updated": 40,
+    "updated": 30,
     "skipped": 0
   }
 }
@@ -149,7 +148,7 @@ Retrieves jobs from Firestore with filtering.
 **Query Parameters**:
 
 - `limit`: Number of jobs to return (default: 50)
-- `source`: Filter by source (`reliefweb`, `workingnomads`, `unjobs`)
+- `source`: Filter by source (`reliefweb`, `devjobsindo`, `unjobs`)
 - `search`: Search in title/description/organization/location
 - `sortBy`: Sort field (datePosted, dateAdded, title, organization)
 - `sortOrder`: asc or desc (default: desc)
@@ -183,7 +182,7 @@ Jobs are stored in Firestore with this structure:
 
 ## 🎨 Features
 
-- **Multi-source aggregation**: Fetches from ReliefWeb, Working Nomads, and UN Jobs
+- **Multi-source aggregation**: Fetches from ReliefWeb and DevJobsIndo (UN Jobs integration is available but may be empty if Cloudflare blocks the feed)
 - **Unified format**: All jobs normalized to same structure
 - **Search & filter**: Filter by source, search text, sort options
 - **CV Analysis integration**: Click "Analyze Match" to analyze job with your CV
