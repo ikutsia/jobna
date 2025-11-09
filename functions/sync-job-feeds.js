@@ -44,11 +44,15 @@ try {
 
 const parser = new Parser();
 
+const reliefwebAppName = process.env.RELIEFWEB_APPNAME || "jobna";
+
 // Feed sources configuration
 const FEED_SOURCES = {
   reliefweb: {
     type: "json",
-    url: "https://api.reliefweb.int/v1/jobs?appname=jobna&limit=100",
+    url: `https://api.reliefweb.int/v1/jobs?appname=${encodeURIComponent(
+      reliefwebAppName
+    )}&limit=100`,
     enabled: true,
     maxJobs: 100, // Limit per sync
   },
@@ -67,32 +71,13 @@ const FEED_SOURCES = {
   remoteok: {
     type: "rss",
     url: "https://remoteok.com/remote-jobs.rss",
-    enabled: false, // Disabled - 403 (VPN/IP block)
+    enabled: false,
     maxJobs: 50,
   },
   unjobs: {
     type: "rss",
     url: "https://unjobs.org/skills/rss",
-    enabled: false, // Disabled - Cloudflare challenge / invalid XML
-    maxJobs: 50,
-  },
-  // Additional sources can be re-enabled once reliable feeds are confirmed
-  impactpool: {
-    type: "rss",
-    url: "https://www.impactpool.org/feed",
-    enabled: false, // Disabled - 404 error
-    maxJobs: 50,
-  },
-  idealist: {
-    type: "rss",
-    url: "https://www.idealist.org/en/jobs.rss",
-    enabled: false, // Disabled - 404 error
-    maxJobs: 50,
-  },
-  eurobrussels: {
-    type: "rss",
-    url: "https://www.eurobrussels.com/rss/all_jobs.xml",
-    enabled: false, // Disabled - 404 error
+    enabled: false,
     maxJobs: 50,
   },
 };
@@ -477,12 +462,12 @@ async function fetchAdzunaJobs() {
       timeout: 15000,
       headers: {
         "User-Agent": "Jobna/1.0",
+        Accept: "application/json",
       },
       params: {
         app_id: appId,
         app_key: appKey,
         results_per_page: resultsPerPage,
-        content_type: "application/json",
       },
     });
 

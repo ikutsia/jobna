@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the RSS/API feed aggregator functionality that currently fetches jobs from ReliefWeb, DevJobsIndo, and Adzuna (other sources can be re-enabled once stable feeds are available; feeds such as UN Jobs or Remote OK remain disabled because of access blocks). DevJobsIndo currently exposes its feed over HTTP only—HTTPS requests fail because the SSL certificate is misconfigured.
+This guide explains how to set up the feed aggregator functionality that fetches jobs from ReliefWeb, DevJobsIndo, and Adzuna. Other feeds (UN Jobs, Remote OK, etc.) are currently disabled because of access limitations.
 
 ## 🏗️ Architecture
 
@@ -187,7 +187,7 @@ Jobs are stored in Firestore with this structure:
 
 ## 🎨 Features
 
-- **Multi-source aggregation**: Fetches from ReliefWeb, DevJobsIndo, and Adzuna (other feeds such as UN Jobs and Remote OK are currently disabled)
+- **Multi-source aggregation**: Fetches from ReliefWeb, DevJobsIndo, and Adzuna (other feeds remain disabled)
 - **Unified format**: All jobs normalized to same structure
 - **Search & filter**: Filter by source, search text, sort options
 - **CV Analysis integration**: Click "Analyze Match" to analyze job with your CV
