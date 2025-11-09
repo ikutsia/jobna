@@ -241,6 +241,15 @@ function HomePage() {
               Empowering job seekers with AI-powered tools to land their dream
               jobs faster and more effectively.
             </p>
+            <div className="text-gray-300 mb-6 text-sm md:text-base leading-relaxed">
+              <p>We love to receive your feedback about app improvements and desired features here!</p>
+              <a
+                href="mailto:jobna.ai.co@gmail.com"
+                className="text-blue-400 hover:text-blue-300"
+              >
+                jobna.ai.co@gmail.com
+              </a>
+            </div>
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-6 mb-6">
               <Link
                 to="/terms-of-service"
