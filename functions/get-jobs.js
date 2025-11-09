@@ -1,5 +1,7 @@
 const admin = require("firebase-admin");
 
+const DISABLED_SOURCES = new Set();
+
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   try {
@@ -125,10 +127,16 @@ exports.handler = async (event, context) => {
     let jobs = [];
 
     snapshot.forEach((doc) => {
-      const data = doc.data();
+      const jobData = doc.data();
+      if (!jobData) return;
+
+      if (DISABLED_SOURCES.has(jobData.source)) {
+        return;
+      }
+
       jobs.push({
         id: doc.id,
-        ...data,
+        ...jobData,
       });
     });
 
@@ -185,6 +193,9 @@ exports.handler = async (event, context) => {
         return true;
       });
     }
+
+    // Filter out disabled sources
+    jobs = jobs.filter((job) => !DISABLED_SOURCES.has(job.source));
 
     // Sort jobs in memory (since Firestore ordering may not work)
     jobs.sort((a, b) => {
