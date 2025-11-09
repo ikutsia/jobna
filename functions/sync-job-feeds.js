@@ -56,12 +56,6 @@ const FEED_SOURCES = {
     enabled: true,
     maxJobs: 100, // Limit per sync
   },
-  devjobsindo: {
-    type: "rss",
-    url: "http://www.devjobsindo.org/feed/",
-    enabled: true,
-    maxJobs: 50,
-  },
   adzuna: {
     type: "json",
     enabled: true,
@@ -325,35 +319,6 @@ async function fetchRSSJobs(sourceName, feedUrl) {
               if (lastCategory) {
                 location = lastCategory;
               }
-            }
-          }
-        }
-
-        if (sourceName === "devjobsindo") {
-          // Titles often include location after a dash, e.g., "Project Manager – Jakarta"
-          const dashMatch = cleanedTitle.match(/(.+)[–-]\s*(.+)/);
-          if (dashMatch) {
-            cleanedTitle = dashMatch[1].trim();
-            if (location === "Location not specified") {
-              location = dashMatch[2].trim();
-            }
-          }
-
-          // Look for "Location:" pattern in content
-          if (location === "Location not specified") {
-            for (const text of textSources) {
-              const locMatch = text.match(/location[:\-]\s*([^<\n]+)/i);
-              if (locMatch) {
-                location = locMatch[1].trim();
-                break;
-              }
-            }
-          }
-
-          // WordPress feeds usually include categories; map them to tags and organization hints
-          if (Array.isArray(item.categories) && item.categories.length > 0) {
-            if (!organization || organization === "Unknown") {
-              organization = item.categories[0].trim();
             }
           }
         }

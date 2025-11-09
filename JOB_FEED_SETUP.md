@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the feed aggregator functionality that fetches jobs from ReliefWeb, DevJobsIndo, and Adzuna. Other feeds (UN Jobs, Remote OK, etc.) are currently disabled because of access limitations.
+This guide explains how to set up the feed aggregator functionality that fetches jobs from ReliefWeb and Adzuna. Other feeds (DevJobsIndo, UN Jobs, Remote OK, etc.) are currently disabled because of access or freshness limitations.
 
 ## 🏗️ Architecture
 
@@ -130,15 +130,14 @@ Fetches jobs from all sources and stores them in Firestore.
 ```json
 {
   "success": true,
-  "totalFetched": 190,
+  "totalFetched": 150,
   "bySource": {
-    "reliefweb": 90,
-    "devjobsindo": 50,
+    "reliefweb": 100,
     "adzuna": 50
   },
   "storage": {
-    "stored": 140,
-    "updated": 50,
+    "stored": 110,
+    "updated": 40,
     "skipped": 0
   }
 }
@@ -153,7 +152,7 @@ Retrieves jobs from Firestore with filtering.
 **Query Parameters**:
 
 - `limit`: Number of jobs to return (default: 50)
-- `source`: Filter by source (`reliefweb`, `devjobsindo`, `adzuna`)
+- `source`: Filter by source (`reliefweb`, `adzuna`)
 - `search`: Search in title/description/organization/location
 - `sortBy`: Sort field (datePosted, dateAdded, title, organization)
 - `sortOrder`: asc or desc (default: desc)
@@ -187,7 +186,7 @@ Jobs are stored in Firestore with this structure:
 
 ## 🎨 Features
 
-- **Multi-source aggregation**: Fetches from ReliefWeb, DevJobsIndo, and Adzuna (other feeds remain disabled)
+- **Multi-source aggregation**: Fetches from ReliefWeb and Adzuna (other feeds remain disabled)
 - **Unified format**: All jobs normalized to same structure
 - **Search & filter**: Filter by source, search text, sort options
 - **CV Analysis integration**: Click "Analyze Match" to analyze job with your CV
