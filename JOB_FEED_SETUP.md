@@ -189,6 +189,50 @@ Retrieves jobs from Firestore with filtering.
 /.netlify/functions/get-jobs?source=adzuna&location=gb&limit=20&sortBy=datePosted&sortOrder=desc
 ```
 
+### `/.netlify/functions/search-jobs`
+
+Performs a live search against ReliefWeb and Adzuna without touching Firestore. Use this when the user enters a keyword in the UI.
+
+**Method**: `GET`
+
+**Query Parameters**:
+
+- `search`: Keyword or phrase to search for (optional, but recommended)
+- `source`: `reliefweb`, `adzuna`, or `all` (default)
+- `location`: Adzuna country slug (`us`, `gb`, etc.) or `all`
+- `limit`: Max results per source (default: 50, max: 100 for ReliefWeb, 50 for Adzuna)
+
+**Example**:
+
+```
+/.netlify/functions/search-jobs?search=program%20manager&source=all&location=gb
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "total": 40,
+  "jobs": [
+    {
+      "id": "reliefweb_123456",
+      "title": "Programme Manager",
+      "organization": "UNICEF",
+      "location": "London, United Kingdom",
+      "link": "https://...",
+      "source": "reliefweb"
+    }
+  ],
+  "bySource": {
+    "reliefweb": 25,
+    "adzuna": 15
+  },
+  "adzunaCountriesUsed": ["gb"],
+  "timestamp": "2025-11-09T13:10:00.000Z"
+}
+```
+
 ## 📊 Data Structure
 
 Jobs are stored in Firestore with this structure:

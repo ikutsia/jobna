@@ -48,73 +48,133 @@ function JobFeed() {
     setError(null);
 
     try {
-      const params = new URLSearchParams({
-        limit: "100",
-        ...(filters.source !== "all" && { source: filters.source }),
-        ...(filters.search && { search: filters.search }),
-        ...(filters.categories && { categories: filters.categories }),
-        ...(filters.location !== "all" &&
-          (filters.source === "adzuna" || filters.source === "all") && {
-            location: filters.location,
-          }),
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-      });
+      const searchTerm = filters.search.trim();
+      const usingLiveSearch = searchTerm.length > 0;
 
-      console.log(
-        `🔍 Fetching jobs: /.netlify/functions/get-jobs?${params.toString()}`
-      );
+      let response;
 
-      const response = await fetch(
-        `/.netlify/functions/get-jobs?${params.toString()}`
-      );
+      if (usingLiveSearch) {
+        const params = new URLSearchParams({
+          limit: "100",
+          search: searchTerm,
+        });
+
+        if (filters.source !== "all") {
+          params.set("source", filters.source);
+        }
+
+        if (
+          filters.location !== "all" &&
+          (filters.source === "adzuna" || filters.source === "all")
+        ) {
+          params.set("location", filters.location);
+        }
+
+        response = await fetch(
+          `/.netlify/functions/search-jobs?${params.toString()}`
+        );
+      } else {
+        const params = new URLSearchParams({
+          limit: "100",
+          ...(filters.source !== "all" && { source: filters.source }),
+          ...(filters.search && { search: filters.search }),
+          ...(filters.categories && { categories: filters.categories }),
+          ...(filters.location !== "all" &&
+            (filters.source === "adzuna" || filters.source === "all") && {
+              location: filters.location,
+            }),
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder,
+        });
+
+        response = await fetch(
+          `/.netlify/functions/get-jobs?${params.toString()}`
+        );
+      }
 
       console.log(`📦 Response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Response error:", errorText);
-        throw new Error(`Failed to fetch jobs: ${response.status}`);
+        throw new Error(`Failed to fetch jobs (${response.status})`);
       }
 
       const data = await response.json();
 
-      console.log("📦 Response data:", {
-        success: data.success,
-        jobsCount: data.jobs?.length || 0,
-        total: data.total,
-        returned: data.returned,
+      if (data.success === false) {
+        throw new Error(data.error || "Failed to fetch jobs");
+      }
+
+      let jobList = Array.isArray(data.jobs) ? data.jobs : [];
+
+      if (filters.categories) {
+        const categoriesLower = filters.categories
+          .split(",")
+          .map((cat) => cat.trim().toLowerCase())
+          .filter(Boolean);
+        if (categoriesLower.length > 0) {
+          jobList = jobList.filter((job) =>
+            job.tags
+              ? categoriesLower.every((cat) =>
+                  job.tags.some((tag) => tag.toLowerCase().includes(cat))
+                )
+              : false
+          );
+        }
+      }
+
+      if (!usingLiveSearch && filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        jobList = jobList.filter((job) => {
+          const combined = `${job.title || ""} ${job.description || ""} ${
+            job.organization || ""
+          } ${job.location || ""}`.toLowerCase();
+          return combined.includes(searchLower);
+        });
+      }
+
+      jobList.sort((a, b) => {
+        const field = filters.sortBy;
+        let aValue = a[field] || "";
+        let bValue = b[field] || "";
+
+        if (field.toLowerCase().includes("date")) {
+          aValue = new Date(aValue).getTime() || 0;
+          bValue = new Date(bValue).getTime() || 0;
+        } else {
+          aValue = aValue.toString().toLowerCase();
+          bValue = bValue.toString().toLowerCase();
+        }
+
+        if (filters.sortOrder === "asc") {
+          return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        }
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       });
 
-      if (data.success) {
-        const fetchedJobs = data.jobs || [];
-        setJobs(fetchedJobs);
-        setStats({
-          total: data.total || 0,
-          returned: fetchedJobs.length,
-        });
+      setJobs(jobList);
+      setStats({
+        total:
+          typeof data.total === "number" ? data.total : jobList.length,
+        returned: jobList.length,
+      });
 
-        console.log(`✅ Loaded ${fetchedJobs.length} jobs from API`);
-
-        if (fetchedJobs.length === 0) {
-          if (data.total > 0) {
-            setError(
-              "No jobs match your current filters. Try adjusting your search criteria."
-            );
-          } else {
-            setError(
-              "No jobs found. Click 'Sync Jobs' to fetch jobs from job sites."
-            );
-          }
-        } else {
-          setError(null); // Clear any previous errors
+      if (data.errors) {
+        const messages = Object.entries(data.errors)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(" | ");
+        if (messages) {
+          setError(messages);
         }
       } else {
-        throw new Error(data.error || "Failed to fetch jobs");
+        setError(null);
       }
     } catch (err) {
       console.error("Fetch jobs error:", err);
       setError(err.message);
+      setJobs([]);
+      setStats({ total: 0, returned: 0 });
     } finally {
       setLoading(false);
     }
