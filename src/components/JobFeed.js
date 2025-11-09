@@ -2,6 +2,29 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { getCurrentUser } from "../firebase/auth";
 
+const ADZUNA_LOCATION_OPTIONS = [
+  { value: "all", label: "All Locations" },
+  { value: "us", label: "United States" },
+  { value: "gb", label: "United Kingdom" },
+  { value: "au", label: "Australia" },
+  { value: "ca", label: "Canada" },
+  { value: "de", label: "Germany" },
+  { value: "fr", label: "France" },
+  { value: "es", label: "Spain" },
+  { value: "it", label: "Italy" },
+  { value: "nl", label: "Netherlands" },
+  { value: "nz", label: "New Zealand" },
+  { value: "sg", label: "Singapore" },
+  { value: "za", label: "South Africa" },
+  { value: "ae", label: "United Arab Emirates" },
+  { value: "be", label: "Belgium" },
+  { value: "br", label: "Brazil" },
+  { value: "in", label: "India" },
+  { value: "mx", label: "Mexico" },
+  { value: "pl", label: "Poland" },
+  { value: "ch", label: "Switzerland" },
+];
+
 function JobFeed() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,6 +33,7 @@ function JobFeed() {
     source: "all",
     search: "",
     categories: "",
+    location: "all",
     sortBy: "datePosted",
     sortOrder: "desc",
   });
@@ -29,6 +53,10 @@ function JobFeed() {
         ...(filters.source !== "all" && { source: filters.source }),
         ...(filters.search && { search: filters.search }),
         ...(filters.categories && { categories: filters.categories }),
+        ...(filters.location !== "all" &&
+          (filters.source === "adzuna" || filters.source === "all") && {
+            location: filters.location,
+          }),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       });
@@ -94,6 +122,7 @@ function JobFeed() {
     filters.source,
     filters.search,
     filters.categories,
+    filters.location,
     filters.sortBy,
     filters.sortOrder,
   ]);
@@ -119,8 +148,17 @@ function JobFeed() {
       setLoading(true);
       setError(null);
 
+      const payload = {
+        adzunaCountries:
+          filters.location === "all" ? "all" : filters.location,
+      };
+
       const response = await fetch("/.netlify/functions/sync-job-feeds", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -244,7 +282,7 @@ function JobFeed() {
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               {/* Source Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -260,6 +298,26 @@ function JobFeed() {
                   <option value="all">All Sources</option>
                   <option value="reliefweb">ReliefWeb</option>
                   <option value="adzuna">Adzuna</option>
+                </select>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location (Adzuna)
+                </label>
+                <select
+                  value={filters.location}
+                  onChange={(e) =>
+                    setFilters({ ...filters, location: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {ADZUNA_LOCATION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

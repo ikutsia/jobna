@@ -1,6 +1,6 @@
 # Job Feed Aggregator Setup Guide
 
-This guide explains how to set up the feed aggregator functionality that fetches jobs from ReliefWeb and Adzuna. Other feeds (DevJobsIndo, UN Jobs, Remote OK, etc.) are currently disabled because of access or freshness limitations.
+This guide explains how to set up the feed aggregator functionality that fetches jobs from ReliefWeb and Adzuna. Other feeds (UN Jobs, Remote OK, etc.) remain disabled because of access limitations. The job feed UI now includes a Location dropdown for Adzuna so you can pull roles from a single country or from every supported market at once.
 
 ## 🏗️ Architecture
 
@@ -14,8 +14,8 @@ This guide explains how to set up the feed aggregator functionality that fetches
 
 The required dependencies have already been added to `functions/package.json`:
 
-- `rss-parser`: Parse RSS/XML feeds
-- `axios`: Fetch JSON APIs
+- `rss-parser`: Parse RSS/XML feeds (ReliefWeb legacy support)
+- `axios`: Fetch JSON APIs (ReliefWeb & Adzuna)
 - `firebase-admin`: Server-side Firestore access
 
 Install them:
@@ -59,8 +59,11 @@ FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}  # Full JSON
 RELIEFWEB_APPNAME=your-approved-appname   # optional but recommended
 ADZUNA_APP_ID=xxxxxxxx
 ADZUNA_APP_KEY=xxxxxxxx
-ADZUNA_COUNTRY=us   # optional, defaults to 'us'
+ADZUNA_COUNTRY=us                 # default single-country fallback
+ADZUNA_COUNTRY_LIST=us,gb,au,ca   # optional: countries fetched when "All" is selected
 ```
+
+> If you don’t provide `RELIEFWEB_APPNAME`, the ReliefWeb API returns a `403` error. Register at [https://apidoc.reliefweb.int/parameters#appname](https://apidoc.reliefweb.int/parameters#appname) to get your own name. `ADZUNA_COUNTRY_LIST` lets you limit the countries queried when the UI location dropdown is set to “All”. If omitted, the function will pull from every Adzuna market.
 
 ### 4. Firestore Security Rules
 
@@ -91,7 +94,7 @@ To automatically sync jobs every 6 hours:
    - Schedule: `0 */6 * * *` (every 6 hours)
    - Or use Netlify's Scheduled Functions feature
 
-Alternatively, users can manually trigger sync via the "Sync Jobs" button in the UI.
+Alternatively, users can manually trigger sync via the "Sync Jobs" button in the UI. When the location dropdown is set to a specific country, only that country’s Adzuna feed is refreshed; selecting “All” pulls from the configured list.
 
 ### 6. Test the Setup
 
@@ -105,25 +108,44 @@ Alternatively, users can manually trigger sync via the "Sync Jobs" button in the
    POST http://localhost:8888/.netlify/functions/sync-job-feeds
    ```
 
+   To test a specific set of Adzuna countries, send JSON:
+
+   ```bash
+   curl -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"adzunaCountries":"gb"}' \
+     http://localhost:8888/.netlify/functions/sync-job-feeds
+   ```
+
 2. **Get Jobs Test**:
 
    ```bash
-   GET http://localhost:8888/.netlify/functions/get-jobs
+   GET http://localhost:8888/.netlify/functions/get-jobs?source=adzuna&location=gb
    ```
 
 3. **Frontend Test**:
    - Deploy to Netlify
-   - Visit `/job-feed` page
-   - Click "Sync Jobs" button
-   - Verify jobs appear
+   - Visit `/job-feed`
+   - Choose a location (e.g., "United States") and click "Sync Jobs"
+   - Verify jobs appear and filters (source, location, search) work
 
 ## 🔧 Function Endpoints
 
 ### `/.netlify/functions/sync-job-feeds`
 
-Fetches jobs from all sources and stores them in Firestore.
+Fetches jobs from ReliefWeb and Adzuna, then stores them in Firestore.
 
 **Method**: `POST` or `GET`
+
+**Payload (optional)**:
+
+```json
+{
+  "adzunaCountries": "gb"        // string or comma-separated list
+}
+```
+
+Set `adzunaCountries` to `"all"` to pull from the configured list of markets.
 
 **Response**:
 
@@ -139,7 +161,9 @@ Fetches jobs from all sources and stores them in Firestore.
     "stored": 110,
     "updated": 40,
     "skipped": 0
-  }
+  },
+  "adzunaCountriesUsed": ["us", "gb"],
+  "timestamp": "2025-11-09T13:00:00.000Z"
 }
 ```
 
@@ -153,14 +177,16 @@ Retrieves jobs from Firestore with filtering.
 
 - `limit`: Number of jobs to return (default: 50)
 - `source`: Filter by source (`reliefweb`, `adzuna`)
+- `location`: Country slug (Adzuna only, e.g., `gb`, `us`)
 - `search`: Search in title/description/organization/location
+- `categories`: Comma-separated keywords (RSS feeds)
 - `sortBy`: Sort field (datePosted, dateAdded, title, organization)
 - `sortOrder`: asc or desc (default: desc)
 
 **Example**:
 
 ```
-/.netlify/functions/get-jobs?source=reliefweb&limit=20&sortBy=datePosted&sortOrder=desc
+/.netlify/functions/get-jobs?source=adzuna&location=gb&limit=20&sortBy=datePosted&sortOrder=desc
 ```
 
 ## 📊 Data Structure
@@ -177,18 +203,20 @@ Jobs are stored in Firestore with this structure:
   description: "...",              // Full job description
   datePosted: "2024-01-15T10:00:00Z",  // When job was posted
   dateAdded: "2024-01-15T10:00:00Z",  // When added to our DB
-  source: "reliefweb",             // Source identifier
-  sourceId: "12345",               // Original ID from source
+  source: "reliefweb" | "adzuna",   // Source identifier
+  sourceId: "us_12345",            // Original ID (includes Adzuna country slug)
   tags: ["development", "health"], // Categories/tags
-  salary: ""                       // Salary info (if available)
+  countrySlug: "us",               // Adzuna country slug (if applicable)
+  salary: ""                        // Salary info (if available)
 }
 ```
 
 ## 🎨 Features
 
-- **Multi-source aggregation**: Fetches from ReliefWeb and Adzuna (other feeds remain disabled)
-- **Unified format**: All jobs normalized to same structure
-- **Search & filter**: Filter by source, search text, sort options
+- **Multi-source aggregation**: Fetches from ReliefWeb and Adzuna
+- **Location-aware sync**: Choose a country slug or "All" to control which Adzuna markets are refreshed
+- **Unified format**: All jobs normalized to the same structure
+- **Search & filter**: Filter by source, location, search text, categories, sort options
 - **CV Analysis integration**: Click "Analyze Match" to analyze job with your CV
 - **Auto-sync**: Scheduled function keeps jobs fresh
 - **Responsive UI**: Works on mobile and desktop
@@ -201,23 +229,22 @@ Jobs are stored in Firestore with this structure:
 2. Verify Firebase Admin SDK is configured correctly
 3. Check Firestore security rules allow reads
 4. Check browser console for errors
+5. Ensure `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and `RELIEFWEB_APPNAME` environment variables are set
 
-### Firebase Admin errors?
+### Adzuna returns errors?
 
-1. Verify `FIREBASE_PROJECT_ID` is set correctly
-2. If using service account, ensure JSON is properly formatted
-3. Check Netlify function logs for detailed errors
+- Verify the country slug is valid (see the list at the top of `sync-job-feeds.js`)
+- Increase your results limit carefully—Adzuna expects `results_per_page` ≤ 50
+- Make sure your account is active and not rate-limited
 
-### Feed fetching fails?
+### ReliefWeb returning 403?
 
-1. Some RSS feeds may be rate-limited
-2. Check if feed URLs are still valid
-3. Some sources may have changed their API/feed structure
+- Ensure `RELIEFWEB_APPNAME` matches the approved name you received from ReliefWeb
 
 ## 🚀 Next Steps
 
-- Add more job sources
-- Implement pagination for large job lists
-- Add email alerts for new matching jobs
-- Enhance search with full-text indexing
-- Add job bookmarking feature
+- Add additional job sources (if they expose a reliable RSS/API)
+- Integrate a queue or caching layer for heavy feeds
+- Extend analytics to track job sync counts per country
+
+Happy job hunting! 🧭

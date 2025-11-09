@@ -72,6 +72,7 @@ exports.handler = async (event, context) => {
     const source = params.get("source"); // Filter by source
     const search = params.get("search"); // Search in title/description
     const categories = params.get("categories"); // Comma-separated categories
+    const locationSlug = params.get("location"); // Country slug for Adzuna
     const sortBy = params.get("sortBy") || "datePosted"; // Sort field
     const sortOrder = params.get("sortOrder") || "desc"; // asc or desc
 
@@ -175,6 +176,16 @@ exports.handler = async (event, context) => {
       });
     }
 
+    if (locationSlug) {
+      const locationLower = locationSlug.toLowerCase();
+      jobs = jobs.filter((job) => {
+        if (job.source === "adzuna") {
+          return job.countrySlug === locationLower;
+        }
+        return true;
+      });
+    }
+
     // Sort jobs in memory (since Firestore ordering may not work)
     jobs.sort((a, b) => {
       let aValue = a[sortBy];
@@ -219,6 +230,7 @@ exports.handler = async (event, context) => {
         source: source || "all",
         search: search || "",
         categories: categories || "",
+        location: locationSlug || "all",
         sortBy: sortBy,
         sortOrder: sortOrder,
       },

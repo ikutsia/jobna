@@ -2,6 +2,104 @@ const Parser = require("rss-parser");
 const axios = require("axios");
 const admin = require("firebase-admin");
 
+const ADZUNA_SUPPORTED_COUNTRIES = [
+  "au",
+  "at",
+  "be",
+  "br",
+  "ca",
+  "fr",
+  "de",
+  "in",
+  "it",
+  "mx",
+  "nl",
+  "nz",
+  "pl",
+  "sg",
+  "za",
+  "es",
+  "ch",
+  "ae",
+  "gb",
+  "us",
+];
+
+const ENV_ADZUNA_COUNTRY_LIST = process.env.ADZUNA_COUNTRY_LIST
+  ? process.env.ADZUNA_COUNTRY_LIST.split(",")
+      .map((c) => c.trim().toLowerCase())
+      .filter(Boolean)
+  : null;
+
+const DEFAULT_ADZUNA_COUNTRY_LIST = ENV_ADZUNA_COUNTRY_LIST
+  ? Array.from(
+      new Set(
+        ENV_ADZUNA_COUNTRY_LIST.filter((slug) =>
+          ADZUNA_SUPPORTED_COUNTRIES.includes(slug)
+        )
+      )
+    )
+  : ADZUNA_SUPPORTED_COUNTRIES;
+
+const FALLBACK_ADZUNA_COUNTRY =
+  (process.env.ADZUNA_COUNTRY &&
+    ADZUNA_SUPPORTED_COUNTRIES.includes(
+      process.env.ADZUNA_COUNTRY.toLowerCase()
+    ) &&
+    process.env.ADZUNA_COUNTRY.toLowerCase()) ||
+  "us";
+
+function parseAdzunaCountriesFromEvent(event) {
+  const requested = [];
+
+  if (event && event.httpMethod && event.body) {
+    try {
+      const body = JSON.parse(event.body);
+      const value = body?.adzunaCountries;
+      if (value) {
+        if (Array.isArray(value)) {
+          requested.push(
+            ...value.map((item) =>
+              typeof item === "string" ? item.trim() : ""
+            )
+          );
+        } else if (typeof value === "string") {
+          requested.push(
+            ...value.split(",").map((item) => item.trim())
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Unable to parse Adzuna countries from body:", error);
+    }
+  }
+
+  const qsValue = event?.queryStringParameters?.adzunaCountries;
+  if (qsValue) {
+    requested.push(...qsValue.split(",").map((item) => item.trim()));
+  }
+
+  return requested.filter(Boolean);
+}
+
+function normalizeAdzunaCountries(requested) {
+  if (!requested || requested.length === 0) {
+    return [FALLBACK_ADZUNA_COUNTRY];
+  }
+
+  const lower = requested.map((entry) => entry.toLowerCase());
+
+  if (lower.includes("all")) {
+    return DEFAULT_ADZUNA_COUNTRY_LIST;
+  }
+
+  const filtered = lower.filter((slug) =>
+    ADZUNA_SUPPORTED_COUNTRIES.includes(slug)
+  );
+
+  return filtered.length > 0 ? Array.from(new Set(filtered)) : [FALLBACK_ADZUNA_COUNTRY];
+}
+
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   try {
@@ -274,6 +372,10 @@ async function fetchRSSJobs(sourceName, feedUrl) {
         let rawTitle = item.title || "No title";
         let cleanedTitle = rawTitle;
 
+        let tags = Array.isArray(item.categories)
+          ? item.categories.map((tag) => tag.trim()).filter(Boolean)
+          : [];
+
         if (sourceName === "unjobs") {
           if (rawTitle.includes(":")) {
             const [possibleOrg, ...rest] = rawTitle.split(":");
@@ -324,7 +426,6 @@ async function fetchRSSJobs(sourceName, feedUrl) {
         }
 
         if (sourceName === "remoteok") {
-          // Title format often "Company: Role"
           if (rawTitle.includes(":")) {
             const [possibleOrg, ...rest] = rawTitle.split(":");
             if (possibleOrg) {
@@ -336,35 +437,33 @@ async function fetchRSSJobs(sourceName, feedUrl) {
             }
           }
 
-          // Many postings include tags; keep them as tags
           if (Array.isArray(item.tags) && item.tags.length > 0) {
-            job.tags = item.tags.map((tag) => tag.trim());
+            item.tags.forEach((tag) => {
+              const trimmed = typeof tag === "string" ? tag.trim() : "";
+              if (trimmed && !tags.includes(trimmed)) {
+                tags.push(trimmed);
+              }
+            });
           }
 
-          // Remote OK posts are remote by default
           if (!location || location === "Location not specified") {
             location = "Remote";
           }
         }
-
-        const jobLink =
-          item.link || (typeof item.guid === "string" ? item.guid : "");
 
         const job = {
           id: generateJobId(sourceName, item.guid || item.link || index),
           title: cleanedTitle || rawTitle || "No title",
           organization: organization || "Unknown",
           location: location || "Location not specified",
-          link: jobLink,
+          link: item.link || (typeof item.guid === "string" ? item.guid : ""),
           description:
             item.contentSnippet || item.content || item.summary || "",
           datePosted: item.pubDate || item.isoDate || new Date().toISOString(),
           dateAdded: new Date().toISOString(),
           source: sourceName,
           sourceId: item.guid || item.link || index.toString(),
-          tags: Array.isArray(item.categories)
-            ? item.categories.map((tag) => tag.trim()).filter(Boolean)
-            : [],
+          tags,
           salary: "",
         };
 
@@ -405,46 +504,52 @@ async function fetchRSSJobs(sourceName, feedUrl) {
   }
 }
 
-async function fetchAdzunaJobs() {
+async function fetchAdzunaJobs(countries) {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
-  const config = FEED_SOURCES.adzuna || {};
 
   if (!appId || !appKey) {
-    throw new Error("Adzuna credentials not configured. Set ADZUNA_APP_ID and ADZUNA_APP_KEY in environment variables.");
+    throw new Error(
+      "Adzuna credentials not configured. Set ADZUNA_APP_ID and ADZUNA_APP_KEY in environment variables."
+    );
   }
 
-  const country = config.country || "us";
-  const resultsPerPage = config.maxJobs || 50;
-  const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1`;
+  const slugs = countries && countries.length > 0 ? countries : [FALLBACK_ADZUNA_COUNTRY];
+  const resultsPerCountry = FEED_SOURCES.adzuna?.maxJobs || 50;
 
-  try {
-    console.log(
-      `🔍 Fetching Adzuna from: ${url} (results_per_page=${resultsPerPage})`
-    );
+  const jobs = [];
+  const errors = {};
 
-    const response = await axios.get(url, {
-      timeout: 15000,
-      headers: {
-        "User-Agent": "Jobna/1.0",
-        Accept: "application/json",
-      },
-      params: {
-        app_id: appId,
-        app_key: appKey,
-        results_per_page: resultsPerPage,
-      },
-    });
+  for (const country of slugs) {
+    const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1`;
+    try {
+      console.log(
+        `🔍 Fetching Adzuna from: ${url} (results_per_page=${resultsPerCountry})`
+      );
 
-    const results = response.data?.results || [];
-    console.log(`📦 Adzuna results count: ${results.length}`);
+      const response = await axios.get(url, {
+        timeout: 15000,
+        headers: {
+          "User-Agent": "Jobna/1.0",
+          Accept: "application/json",
+        },
+        params: {
+          app_id: appId,
+          app_key: appKey,
+          results_per_page: resultsPerCountry,
+        },
+      });
 
-    const jobs = results
-      .map((item) => {
-        const jobId = item.id || item.created || item.redirect_url;
+      const results = response.data?.results || [];
+      console.log(`📦 Adzuna (${country}) results count: ${results.length}`);
+
+      results.forEach((item) => {
+        const jobId = item.id || item.adref || item.created || item.redirect_url;
         if (!jobId || !item.redirect_url || !item.title) {
-          return null;
+          return;
         }
+
+        const uniqueId = `${country}_${jobId}`;
 
         const organization =
           item.company?.display_name || item.category?.label || "Unknown";
@@ -466,6 +571,9 @@ async function fetchAdzunaJobs() {
             }
           });
         }
+        if (!tags.includes(country.toUpperCase())) {
+          tags.push(country.toUpperCase());
+        }
 
         const salary =
           item.salary_min && item.salary_max
@@ -476,8 +584,8 @@ async function fetchAdzunaJobs() {
             ? `${item.salary_max}`
             : "";
 
-        return {
-          id: generateJobId("adzuna", jobId),
+        jobs.push({
+          id: generateJobId("adzuna", uniqueId),
           title: item.title,
           organization,
           location,
@@ -486,32 +594,28 @@ async function fetchAdzunaJobs() {
           datePosted: item.created || new Date().toISOString(),
           dateAdded: new Date().toISOString(),
           source: "adzuna",
-          sourceId: String(jobId),
+          sourceId: uniqueId,
           tags,
           salary,
-        };
-      })
-      .filter(Boolean);
-
-    console.log(
-      `✅ Adzuna: Fetched ${jobs.length} jobs, returning ${Math.min(
-        jobs.length,
-        resultsPerPage
-      )} (limited)`
-    );
-
-    return jobs.slice(0, resultsPerPage);
-  } catch (error) {
-    console.error("❌ Adzuna fetch error:", error.message);
-    if (error.response) {
-      console.error(
-        "❌ Adzuna error details:",
-        error.response.status,
-        error.response.data
-      );
+          countrySlug: country,
+        });
+      });
+    } catch (error) {
+      console.error(`❌ Adzuna fetch error for ${country}:`, error.message);
+      if (error.response) {
+        console.error(
+          `❌ Adzuna error details (${country}):`,
+          error.response.status,
+          error.response.data
+        );
+        errors[country] = `${error.response.status}`;
+      } else {
+        errors[country] = error.message;
+      }
     }
-    throw error;
   }
+
+  return { jobs, errors };
 }
 
 /**
@@ -626,6 +730,15 @@ exports.handler = async (event, context) => {
     const results = {};
     const errors = {};
 
+    const requestedAdzunaCountries = parseAdzunaCountriesFromEvent(event);
+    const selectedAdzunaCountries = normalizeAdzunaCountries(
+      requestedAdzunaCountries
+    );
+    console.log(
+      "Adzuna countries selected:",
+      selectedAdzunaCountries.join(", ")
+    );
+
     // Fetch from ReliefWeb (JSON API)
     if (FEED_SOURCES.reliefweb.enabled) {
       try {
@@ -642,9 +755,15 @@ exports.handler = async (event, context) => {
     // Fetch from Adzuna (JSON API)
     if (FEED_SOURCES.adzuna?.enabled) {
       try {
-        const adzunaJobs = await fetchAdzunaJobs();
+        const { jobs: adzunaJobs, errors: adzunaErrors } =
+          await fetchAdzunaJobs(selectedAdzunaCountries);
         allJobs.push(...adzunaJobs);
         results.adzuna = adzunaJobs.length;
+        if (Object.keys(adzunaErrors).length > 0) {
+          errors.adzuna = Object.entries(adzunaErrors)
+            .map(([country, message]) => `${country}: ${message}`)
+            .join("; ");
+        }
       } catch (error) {
         console.error("Adzuna error:", error.message);
         errors.adzuna = error.message;
@@ -683,6 +802,7 @@ exports.handler = async (event, context) => {
       bySource: results,
       storage: storageResults,
       errors: Object.keys(errors).length > 0 ? errors : undefined,
+      adzunaCountriesUsed: selectedAdzunaCountries,
       timestamp: new Date().toISOString(),
     };
 
