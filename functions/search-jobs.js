@@ -39,7 +39,7 @@ const DEFAULT_ADZUNA_COUNTRY_LIST = ENV_ADZUNA_COUNTRY_LIST
         )
       )
     )
-  : ADZUNA_SUPPORTED_COUNTRIES;
+  : [FALLBACK_ADZUNA_COUNTRY];
 
 const FALLBACK_ADZUNA_COUNTRY =
   (process.env.ADZUNA_COUNTRY &&
@@ -157,28 +157,26 @@ function mapAdzunaItem(item, country) {
 
 async function fetchReliefWeb(searchTerm, limit) {
   const safeLimit = Math.max(1, Math.min(limit, 100));
-  const url = `https://api.reliefweb.int/v1/jobs?appname=${encodeURIComponent(
-    reliefwebAppName
-  )}`;
-
-  const body = {
+  const params = {
+    appname: reliefwebAppName,
     limit: safeLimit,
     preset: "list",
-    sort: [
-      {
-        field: "date.created",
-        direction: "desc",
-      },
-    ],
   };
 
   if (searchTerm) {
-    body.query = {
-      value: searchTerm,
-    };
+    params["query[value]"] = searchTerm;
   }
 
-  const response = await axios.post(url, body);
+  params["sort[0][field]"] = "date.created";
+  params["sort[0][direction]"] = "desc";
+
+  const response = await axios.get("https://api.reliefweb.int/v1/jobs", {
+    params,
+    headers: {
+      "User-Agent": "Jobna/1.0",
+      Accept: "application/json",
+    },
+  });
   const entries = response.data?.data || [];
   return entries.map(mapReliefWebItem);
 }
