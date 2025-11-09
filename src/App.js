@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import SignUp from "./components/SignUp";
 import Login from "./components/Login";
@@ -14,6 +14,16 @@ import JobFeed from "./components/JobFeed";
 function HomePage() {
   const { user, loading, handleLogout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleDashboardClick = () => {
+    if (loading) return;
+    if (user) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -52,7 +62,10 @@ function HomePage() {
                       <span className="text-red-600 font-medium text-sm">
                         Feature coming soon...
                       </span>
-                      <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                      <button
+                        onClick={handleDashboardClick}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+                      >
                         Your AI Job Dashboard
                       </button>
                       <Link
@@ -138,7 +151,10 @@ function HomePage() {
                         </div>
                         <button
                           className="block w-full text-left bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
+                          onClick={() => {
+                            handleDashboardClick();
+                            setIsMobileMenuOpen(false);
+                          }}
                         >
                           Your AI Job Dashboard
                         </button>
