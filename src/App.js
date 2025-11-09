@@ -59,15 +59,15 @@ function HomePage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-red-600 font-medium text-sm">
-                        Feature coming soon...
-                      </span>
                       <button
                         onClick={handleDashboardClick}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
                       >
                         Your AI Job Dashboard
                       </button>
+                      <span className="text-red-600 font-medium text-sm">
+                        Feature coming soon...
+                      </span>
                       <Link
                         to="/signup"
                         className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-2 px-4 rounded transition-colors"
