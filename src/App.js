@@ -66,7 +66,7 @@ function HomePage() {
                         Your AI Job Dashboard
                       </button>
                       <span className="text-red-600 font-medium text-sm">
-                        Feature coming soon...
+                        Join Beta...
                       </span>
                       <Link
                         to="/signup"
