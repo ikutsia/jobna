@@ -42,55 +42,39 @@ function JobFeed() {
     returned: 0,
   });
 
-  // Fetch jobs from API - memoized with useCallback
+  // Fetch jobs from live search API (ReliefWeb + Adzuna) - memoized with useCallback
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       const searchTerm = filters.search.trim();
-      const usingLiveSearch = searchTerm.length > 0;
 
       let response;
 
-      if (usingLiveSearch) {
-        const params = new URLSearchParams({
-          limit: "100",
-          search: searchTerm,
-        });
+      // Always use live search endpoint so results are fetched fresh
+      const params = new URLSearchParams({
+        limit: "100",
+      });
 
-        if (filters.source !== "all") {
-          params.set("source", filters.source);
-        }
-
-        if (
-          filters.location !== "all" &&
-          (filters.source === "adzuna" || filters.source === "all")
-        ) {
-          params.set("location", filters.location);
-        }
-
-        response = await fetch(
-          `/.netlify/functions/search-jobs?${params.toString()}`
-        );
-      } else {
-        const params = new URLSearchParams({
-          limit: "100",
-          ...(filters.source !== "all" && { source: filters.source }),
-          ...(filters.search && { search: filters.search }),
-          ...(filters.categories && { categories: filters.categories }),
-          ...(filters.location !== "all" &&
-            (filters.source === "adzuna" || filters.source === "all") && {
-              location: filters.location,
-            }),
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder,
-        });
-
-        response = await fetch(
-          `/.netlify/functions/get-jobs?${params.toString()}`
-        );
+      if (searchTerm) {
+        params.set("search", searchTerm);
       }
+
+      if (filters.source !== "all") {
+        params.set("source", filters.source);
+      }
+
+      if (
+        filters.location !== "all" &&
+        (filters.source === "adzuna" || filters.source === "all")
+      ) {
+        params.set("location", filters.location);
+      }
+
+      response = await fetch(
+        `/.netlify/functions/search-jobs?${params.toString()}`
+      );
 
       console.log(`📦 Response status: ${response.status}`);
 
@@ -124,7 +108,8 @@ function JobFeed() {
         }
       }
 
-      if (!usingLiveSearch && filters.search) {
+      // Client-side search refinement (optional; keeps behavior consistent)
+      if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         jobList = jobList.filter((job) => {
           const combined = `${job.title || ""} ${job.description || ""} ${

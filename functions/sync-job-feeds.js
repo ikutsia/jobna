@@ -25,6 +25,14 @@ const ADZUNA_SUPPORTED_COUNTRIES = [
   "us",
 ];
 
+const FALLBACK_ADZUNA_COUNTRY =
+  (process.env.ADZUNA_COUNTRY &&
+    ADZUNA_SUPPORTED_COUNTRIES.includes(
+      process.env.ADZUNA_COUNTRY.toLowerCase()
+    ) &&
+    process.env.ADZUNA_COUNTRY.toLowerCase()) ||
+  "us";
+
 const ENV_ADZUNA_COUNTRY_LIST = process.env.ADZUNA_COUNTRY_LIST
   ? process.env.ADZUNA_COUNTRY_LIST.split(",")
       .map((c) => c.trim().toLowerCase())
@@ -40,14 +48,6 @@ const DEFAULT_ADZUNA_COUNTRY_LIST = ENV_ADZUNA_COUNTRY_LIST
       )
     )
   : [FALLBACK_ADZUNA_COUNTRY];
-
-const FALLBACK_ADZUNA_COUNTRY =
-  (process.env.ADZUNA_COUNTRY &&
-    ADZUNA_SUPPORTED_COUNTRIES.includes(
-      process.env.ADZUNA_COUNTRY.toLowerCase()
-    ) &&
-    process.env.ADZUNA_COUNTRY.toLowerCase()) ||
-  "us";
 
 function parseAdzunaCountriesFromEvent(event) {
   const requested = [];
