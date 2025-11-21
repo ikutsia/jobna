@@ -1,77 +1,28 @@
-const axios = require("axios");
+const fetch = require("node-fetch");
 
-const ADZUNA_SUPPORTED_COUNTRIES = [
-  "au",
-  "at",
-  "be",
-  "br",
-  "ca",
-  "fr",
-  "de",
-  "in",
-  "it",
-  "mx",
-  "nl",
-  "nz",
-  "pl",
-  "sg",
-  "za",
-  "es",
-  "ch",
-  "ae",
-  "gb",
-  "us",
-];
+// TIMEOUT for external APIs (in ms)
+const API_TIMEOUT = 8000; // 8 seconds per API
+
+// Limit countries to prevent 20+ parallel Adzuna calls
+const MAX_COUNTRIES = 5;
+
+// Adzuna supported locations (subset of all supported countries)
+const ADZUNA_COUNTRIES = ["gb", "us", "ca", "de", "au", "nl", "fr", "in", "sg"];
 
 const reliefwebAppName = process.env.RELIEFWEB_APPNAME || "jobna";
 
-const FALLBACK_ADZUNA_COUNTRY =
-  (process.env.ADZUNA_COUNTRY &&
-    ADZUNA_SUPPORTED_COUNTRIES.includes(
-      process.env.ADZUNA_COUNTRY.toLowerCase()
-    ) &&
-    process.env.ADZUNA_COUNTRY.toLowerCase()) ||
-  "us";
-
-const ENV_ADZUNA_COUNTRY_LIST = process.env.ADZUNA_COUNTRY_LIST
-  ? process.env.ADZUNA_COUNTRY_LIST.split(",")
-      .map((entry) => entry.trim().toLowerCase())
-      .filter(Boolean)
-  : null;
-
-const DEFAULT_ADZUNA_COUNTRY_LIST = ENV_ADZUNA_COUNTRY_LIST
-  ? Array.from(
-      new Set(
-        ENV_ADZUNA_COUNTRY_LIST.filter((slug) =>
-          ADZUNA_SUPPORTED_COUNTRIES.includes(slug)
-        )
-      )
-    )
-  : [FALLBACK_ADZUNA_COUNTRY];
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out")), ms)
+    ),
+  ]);
+}
 
 function generateJobId(source, sourceId) {
   const cleanId = String(sourceId).replace(/[^a-zA-Z0-9_]/g, "_");
   return `${source}_${cleanId}`;
-}
-
-function normalizeAdzunaCountries(requested) {
-  if (!requested || requested.length === 0) {
-    return [FALLBACK_ADZUNA_COUNTRY];
-  }
-
-  const entries = requested
-    .map((entry) => entry.toLowerCase())
-    .filter(Boolean);
-
-  if (entries.includes("all")) {
-    return DEFAULT_ADZUNA_COUNTRY_LIST;
-  }
-
-  const filtered = entries.filter((slug) =>
-    ADZUNA_SUPPORTED_COUNTRIES.includes(slug)
-  );
-
-  return filtered.length > 0 ? Array.from(new Set(filtered)) : [FALLBACK_ADZUNA_COUNTRY];
 }
 
 function mapReliefWebItem(item) {
@@ -85,10 +36,7 @@ function mapReliefWebItem(item) {
   return {
     id: generateJobId("reliefweb", item.id),
     title: fields.title || "No title",
-    organization:
-      fields.source?.[0]?.name ||
-      fields.source?.name ||
-      "Unknown",
+    organization: fields.source?.[0]?.name || fields.source?.name || "Unknown",
     location,
     link: fields.url || fields.url_alias || "",
     description: fields.summary || fields.body || "",
@@ -157,28 +105,58 @@ function mapAdzunaItem(item, country) {
 
 async function fetchReliefWeb(searchTerm, limit) {
   const safeLimit = Math.max(1, Math.min(limit, 100));
-  const params = {
+  const url = "https://api.reliefweb.int/v1/jobs";
+
+  const body = {
     appname: reliefwebAppName,
+    query: searchTerm
+      ? [
+          {
+            field: "title",
+            value: searchTerm,
+            operator: "contains",
+          },
+        ]
+      : undefined,
     limit: safeLimit,
-    preset: "list",
+    sort: [
+      {
+        field: "date.created",
+        direction: "desc",
+      },
+    ],
   };
 
-  if (searchTerm) {
-    params["query[value]"] = searchTerm;
+  // Remove undefined query if no search term
+  if (!body.query) {
+    delete body.query;
   }
 
-  params["sort[0][field]"] = "date.created";
-  params["sort[0][direction]"] = "desc";
+  try {
+    const response = await withTimeout(
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Jobna/1.0",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      }),
+      API_TIMEOUT
+    );
 
-  const response = await axios.get("https://api.reliefweb.int/v1/jobs", {
-    params,
-    headers: {
-      "User-Agent": "Jobna/1.0",
-      Accept: "application/json",
-    },
-  });
-  const entries = response.data?.data || [];
-  return entries.map(mapReliefWebItem);
+    if (!response.ok) {
+      throw new Error(`ReliefWeb API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const entries = data?.data || [];
+    return entries.map(mapReliefWebItem);
+  } catch (error) {
+    console.error("❌ ReliefWeb fetch error:", error.message);
+    throw error;
+  }
 }
 
 async function fetchAdzuna(searchTerm, countries, limit) {
@@ -192,49 +170,56 @@ async function fetchAdzuna(searchTerm, countries, limit) {
   }
 
   const safeLimit = Math.max(1, Math.min(limit, 50));
-  const jobs = [];
+
+  // Limit countries to prevent timeout
+  const countriesToUse = countries.slice(0, MAX_COUNTRIES);
+
   const errors = {};
 
-  for (const country of countries) {
-    const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1`;
+  // Create parallel fetch promises for each country
+  const adzunaFetches = countriesToUse.map((country) => {
+    const encodedQuery = encodeURIComponent(searchTerm || "");
+    const encodedLocation = encodeURIComponent(""); // Location filtering can be added later if needed
 
-    try {
-      const params = {
-        app_id: appId,
-        app_key: appKey,
-        results_per_page: safeLimit,
-      };
+    const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${appId}&app_key=${appKey}&results_per_page=${safeLimit}&what=${encodedQuery}&where=${encodedLocation}`;
 
-      if (searchTerm) {
-        params.what = searchTerm;
-      }
-
-      const response = await axios.get(url, {
-        timeout: 15000,
+    return withTimeout(
+      fetch(url, {
         headers: {
           "User-Agent": "Jobna/1.0",
           Accept: "application/json",
         },
-        params,
-      });
-
-      const results = response.data?.results || [];
-      results.forEach((item) => {
-        const jobId = item.id || item.adref || item.created || item.redirect_url;
-        if (!jobId || !item.redirect_url || !item.title) {
-          return;
+      }),
+      API_TIMEOUT
+    )
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Adzuna API error for ${country}: ${res.status}`);
         }
-        jobs.push(mapAdzunaItem(item, country));
-      });
-    } catch (error) {
-      console.error(`❌ Adzuna fetch error for ${country}:`, error.message);
-      if (error.response) {
-        errors[country] = `${error.response.status}`;
-      } else {
+        return res.json();
+      })
+      .then((json) => {
+        const results = json.results || [];
+        return results
+          .filter((item) => {
+            const jobId =
+              item.id || item.adref || item.created || item.redirect_url;
+            return jobId && item.redirect_url && item.title;
+          })
+          .map((item) => mapAdzunaItem(item, country));
+      })
+      .catch((error) => {
+        console.error(`❌ Adzuna fetch error for ${country}:`, error.message);
         errors[country] = error.message;
-      }
-    }
-  }
+        return []; // Return empty array for failed countries
+      });
+  });
+
+  // Wait for all country fetches to complete (parallel)
+  const results = await Promise.all(adzunaFetches);
+
+  // Flatten all results into a single array
+  const jobs = results.flat();
 
   return { jobs, errors };
 }
@@ -242,57 +227,88 @@ async function fetchAdzuna(searchTerm, countries, limit) {
 exports.handler = async (event) => {
   try {
     const params = event.queryStringParameters || {};
-    const searchTerm = (params.search || "").trim();
+    const searchTerm = (params.search || params.q || "").trim();
     const source = (params.source || "all").toLowerCase();
     const locationParam = (params.location || "all").toLowerCase();
     const limit = Math.max(1, Math.min(parseInt(params.limit, 10) || 50, 100));
+    const page = Math.max(1, parseInt(params.page, 10) || 1);
 
     const includeReliefWeb = source === "all" || source === "reliefweb";
     const includeAdzuna = source === "all" || source === "adzuna";
 
-    const requestedCountries =
-      locationParam === "all" ? ["all"] : [locationParam];
-    const normalizedCountries = normalizeAdzunaCountries(requestedCountries);
+    // Determine countries to use for Adzuna
+    let adzunaCountries = [];
+    if (includeAdzuna) {
+      if (locationParam === "all") {
+        // Use default subset of countries (limited to MAX_COUNTRIES)
+        adzunaCountries = ADZUNA_COUNTRIES.slice(0, MAX_COUNTRIES);
+      } else {
+        // Use specific country if it's in our supported list
+        const requestedCountry = locationParam.toLowerCase();
+        if (ADZUNA_COUNTRIES.includes(requestedCountry)) {
+          adzunaCountries = [requestedCountry];
+        } else {
+          // Fallback to first supported country
+          adzunaCountries = [ADZUNA_COUNTRIES[0]];
+        }
+      }
+    }
 
     const jobs = [];
     const bySource = {};
     const errors = {};
 
+    // Prepare parallel fetch promises
+    const fetchPromises = [];
+
     if (includeReliefWeb) {
-      try {
-        const reliefwebJobs = await fetchReliefWeb(searchTerm, limit);
-        jobs.push(...reliefwebJobs);
-        bySource.reliefweb = reliefwebJobs.length;
-      } catch (error) {
-        console.error("ReliefWeb search error:", error.message);
-        bySource.reliefweb = 0;
-        errors.reliefweb = error.message;
-      }
+      fetchPromises.push(
+        fetchReliefWeb(searchTerm, limit)
+          .then((reliefwebJobs) => {
+            jobs.push(...reliefwebJobs);
+            bySource.reliefweb = reliefwebJobs.length;
+          })
+          .catch((error) => {
+            console.error("ReliefWeb search error:", error.message);
+            bySource.reliefweb = 0;
+            errors.reliefweb = error.message;
+          })
+      );
     }
 
-    let adzunaCountriesUsed = [];
-
-    if (includeAdzuna) {
-      try {
-        adzunaCountriesUsed = normalizedCountries;
-        const { jobs: adzunaJobs, errors: adzunaErrors } = await fetchAdzuna(
-          searchTerm,
-          normalizedCountries,
-          limit
-        );
-        jobs.push(...adzunaJobs);
-        bySource.adzuna = adzunaJobs.length;
-        if (Object.keys(adzunaErrors).length > 0) {
-          errors.adzuna = Object.entries(adzunaErrors)
-            .map(([country, message]) => `${country}: ${message}`)
-            .join("; ");
-        }
-      } catch (error) {
-        console.error("Adzuna search error:", error.message);
-        bySource.adzuna = 0;
-        errors.adzuna = error.message;
-      }
+    if (includeAdzuna && adzunaCountries.length > 0) {
+      fetchPromises.push(
+        fetchAdzuna(searchTerm, adzunaCountries, limit)
+          .then(({ jobs: adzunaJobs, errors: adzunaErrors }) => {
+            jobs.push(...adzunaJobs);
+            bySource.adzuna = adzunaJobs.length;
+            if (Object.keys(adzunaErrors).length > 0) {
+              errors.adzuna = Object.entries(adzunaErrors)
+                .map(([country, message]) => `${country}: ${message}`)
+                .join("; ");
+            }
+          })
+          .catch((error) => {
+            console.error("Adzuna search error:", error.message);
+            bySource.adzuna = 0;
+            errors.adzuna = error.message;
+          })
+      );
     }
+
+    // Execute all fetches in parallel
+    await Promise.allSettled(fetchPromises);
+
+    // Sort jobs by date (newest first)
+    jobs.sort((a, b) => {
+      const dateA = new Date(a.datePosted || a.dateAdded || 0);
+      const dateB = new Date(b.datePosted || b.dateAdded || 0);
+      return dateB - dateA;
+    });
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedJobs = jobs.slice(offset, offset + limit);
 
     return {
       statusCode: 200,
@@ -303,10 +319,10 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         success: true,
         total: jobs.length,
-        jobs,
+        jobs: paginatedJobs,
         bySource,
         errors: Object.keys(errors).length > 0 ? errors : undefined,
-        adzunaCountriesUsed,
+        adzunaCountriesUsed: adzunaCountries,
         timestamp: new Date().toISOString(),
       }),
     };
