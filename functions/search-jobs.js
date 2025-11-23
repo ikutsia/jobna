@@ -77,7 +77,7 @@ exports.handler = async (event) => {
       appname: reliefwebAppName,
       limit,
       offset: (page - 1) * limit,
-      sort: [{ field: "date.created", direction: "desc" }],
+      sort: ["date.created:desc"], // ReliefWeb expects array of strings in "field:order" format
     };
 
     // Build query for ReliefWeb API
