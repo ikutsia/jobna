@@ -80,15 +80,23 @@ exports.handler = async (event) => {
       sort: [{ field: "date.created", direction: "desc" }],
     };
 
-    if (searchTerm) {
-      body.query = { value: searchTerm, fields: ["title"] };
-    }
+    // Build query for ReliefWeb API
+    // TEMPORARY: Comment out query to test if basic request works first
+    // If basic request works, we know query format is the issue
+    // if (searchTerm) {
+    //   body.query = {
+    //     value: searchTerm,
+    //   };
+    // }
+
+    // For now, fetch all jobs without search to test basic functionality
+    // Search filtering can be done client-side until we fix the query format
 
     // -------- LOG EXACT REQUEST --------
     console.log("➡️ ReliefWeb REQUEST:", {
       url,
       method: "POST",
-      body,
+      body: JSON.stringify(body, null, 2),
     });
 
     const response = await withTimeout(
@@ -103,7 +111,20 @@ exports.handler = async (event) => {
     console.log("📩 ReliefWeb RESPONSE STATUS:", response.status);
 
     if (!response.ok) {
-      throw new Error(`ReliefWeb HTTP ${response.status}`);
+      // Get error details from response body BEFORE throwing
+      let errorDetails = "";
+      try {
+        const errorText = await response.text();
+        console.error("❌ ReliefWeb error response body:", errorText);
+        errorDetails = errorText.substring(0, 500);
+      } catch (e) {
+        console.error("❌ Could not read error response:", e.message);
+      }
+
+      const errorMessage = errorDetails
+        ? `ReliefWeb HTTP ${response.status}: ${errorDetails}`
+        : `ReliefWeb HTTP ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -111,7 +132,20 @@ exports.handler = async (event) => {
 
     console.log(`📦 ReliefWeb returned ${items.length} items`);
 
-    const jobs = items.map(mapReliefWebItem);
+    let jobs = items.map(mapReliefWebItem);
+
+    // Client-side search filtering (temporary until we fix ReliefWeb query format)
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      jobs = jobs.filter((job) => {
+        const titleMatch = job.title?.toLowerCase().includes(searchLower);
+        const descMatch = job.description?.toLowerCase().includes(searchLower);
+        return titleMatch || descMatch;
+      });
+      console.log(
+        `🔍 Filtered to ${jobs.length} jobs matching "${searchTerm}"`
+      );
+    }
 
     // Sort by datePosted (newest first) - already sorted by API, but ensure consistency
     jobs.sort((a, b) => {
