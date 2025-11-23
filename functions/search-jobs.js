@@ -1,11 +1,12 @@
 const fetch = require("node-fetch");
 
-// TIMEOUTS
+// TIMEOUT
 const API_TIMEOUT = 8000;
 
+// ReliefWeb app name
 const reliefwebAppName = process.env.RELIEFWEB_APPNAME || "jobna";
 
-// ---------------- Timeout wrapper ----------------
+/* ---------------------- Timeout Wrapper ---------------------- */
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
@@ -15,7 +16,7 @@ function withTimeout(promise, ms) {
   ]);
 }
 
-// ---------------- Mapping helpers ----------------
+/* ---------------------- Mapping Helper ----------------------- */
 function generateJobId(source, sourceId) {
   const clean = String(sourceId).replace(/[^a-zA-Z0-9_]/g, "_");
   return `${source}_${clean}`;
@@ -44,11 +45,11 @@ function mapReliefWebItem(item) {
   };
 }
 
-// =========================================================
-// 🔥 MAIN HANDLER
-// =========================================================
+/* =========================================================
+   🔥 MAIN HANDLER
+========================================================= */
 exports.handler = async (event) => {
-  // Handle CORS preflight
+  // CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -63,127 +64,113 @@ exports.handler = async (event) => {
 
   try {
     const params = event.queryStringParameters || {};
-
     const searchTerm = (params.search || params.q || "").trim();
     const page = Math.max(1, parseInt(params.page) || 1);
-    const limit = Math.max(1, Math.min(parseInt(params.limit) || 50, 100));
+    const limit = Math.max(1, Math.min(parseInt(params.limit) || 30, 100));
 
-    // =========================================================
-    // 🔵 ReliefWeb fetch
-    // =========================================================
     const url = "https://api.reliefweb.int/v1/jobs";
 
-    const body = {
+    /* ------------------------- Request Body ------------------------- */
+    const payload = {
       appname: reliefwebAppName,
       limit,
       offset: (page - 1) * limit,
-      sort: ["date.created:desc"], // ReliefWeb expects array of strings in "field:order" format
+      sort: ["date.created:desc"],
+      // Minimal fields for fast response
+      fields: {
+        include: [
+          "title",
+          "source",
+          "country",
+          "url",
+          "date",
+          "theme",
+          "summary",
+          "location",
+        ],
+      },
     };
 
-    // Build query for ReliefWeb API
-    // TEMPORARY: Comment out query to test if basic request works first
-    // If basic request works, we know query format is the issue
-    // if (searchTerm) {
-    //   body.query = {
-    //     value: searchTerm,
-    //   };
-    // }
+    /* Optional query: If ReliefWeb rejects search, we still load jobs */
+    if (searchTerm) {
+      payload.query = {
+        // ReliefWeb supports simple text query
+        value: searchTerm,
+      };
+    }
 
-    // For now, fetch all jobs without search to test basic functionality
-    // Search filtering can be done client-side until we fix the query format
+    /* ---------------------- LOG EXACT REQUEST ---------------------- */
+    console.log("➡️ ReliefWeb REQUEST:", JSON.stringify(payload, null, 2));
 
-    // -------- LOG EXACT REQUEST --------
-    console.log("➡️ ReliefWeb REQUEST:", {
-      url,
-      method: "POST",
-      body: JSON.stringify(body, null, 2),
-    });
-
-    const response = await withTimeout(
+    /* ---------------------- MAKE REQUEST ---------------------------- */
+    const reliefResponse = await withTimeout(
       fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       }),
       API_TIMEOUT
     );
 
-    console.log("📩 ReliefWeb RESPONSE STATUS:", response.status);
+    console.log("📩 ReliefWeb RESPONSE STATUS:", reliefResponse.status);
 
-    if (!response.ok) {
-      // Get error details from response body BEFORE throwing
-      let errorDetails = "";
+    if (!reliefResponse.ok) {
+      let errorText = "";
       try {
-        const errorText = await response.text();
-        console.error("❌ ReliefWeb error response body:", errorText);
-        errorDetails = errorText.substring(0, 500);
-      } catch (e) {
-        console.error("❌ Could not read error response:", e.message);
-      }
+        errorText = await reliefResponse.text();
+        console.error("❌ RW error body:", errorText);
+      } catch (_) {}
 
-      const errorMessage = errorDetails
-        ? `ReliefWeb HTTP ${response.status}: ${errorDetails}`
-        : `ReliefWeb HTTP ${response.status}`;
-      throw new Error(errorMessage);
+      throw new Error(
+        `ReliefWeb HTTP ${reliefResponse.status}: ${errorText.slice(0, 500)}`
+      );
     }
 
-    const data = await response.json();
+    /* ---------------------- PROCESS DATA ---------------------------- */
+    const data = await reliefResponse.json();
     const items = data.data || [];
 
     console.log(`📦 ReliefWeb returned ${items.length} items`);
 
     let jobs = items.map(mapReliefWebItem);
 
-    // Client-side search filtering (temporary until we fix ReliefWeb query format)
+    // Local filtering fallback
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      jobs = jobs.filter((job) => {
-        const titleMatch = job.title?.toLowerCase().includes(searchLower);
-        const descMatch = job.description?.toLowerCase().includes(searchLower);
-        return titleMatch || descMatch;
-      });
-      console.log(
-        `🔍 Filtered to ${jobs.length} jobs matching "${searchTerm}"`
+      const term = searchTerm.toLowerCase();
+      jobs = jobs.filter(
+        (job) =>
+          job.title.toLowerCase().includes(term) ||
+          job.description.toLowerCase().includes(term)
       );
     }
 
-    // Sort by datePosted (newest first) - already sorted by API, but ensure consistency
-    jobs.sort((a, b) => {
-      const dateA = new Date(a.datePosted || 0).getTime();
-      const dateB = new Date(b.datePosted || 0).getTime();
-      return dateB - dateA;
-    });
+    jobs.sort((a, b) => new Date(b.datePosted) - new Date(a.datePosted));
 
-    console.log(
-      `✅ Returning ${jobs.length} jobs (page ${page}, limit: ${limit})`
-    );
-
-    const response_data = {
-      success: true,
-      jobs: jobs,
-      pagination: {
-        page,
-        limit,
-        total: jobs.length,
-        returned: jobs.length,
-        hasMore: items.length === limit, // If we got a full page, there might be more
-      },
-      source: "reliefweb",
-      timestamp: new Date().toISOString(),
-    };
+    console.log(`✅ Returning ${jobs.length} jobs`);
 
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
       },
-      body: JSON.stringify(response_data),
+      body: JSON.stringify({
+        success: true,
+        jobs,
+        pagination: {
+          page,
+          limit,
+          total: jobs.length,
+          returned: jobs.length,
+          hasMore: items.length === limit,
+        },
+        source: "reliefweb",
+        timestamp: new Date().toISOString(),
+      }),
     };
   } catch (error) {
-    console.error("❌ Search jobs error:", error);
+    console.error("❌ Handler error:", error);
+
     return {
       statusCode: 500,
       headers: {
