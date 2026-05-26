@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
   try {
     // Test Gemini API connection
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const result = await model.generateContent(
       "Hello, this is a test. Respond with 'Gemini is working!'"
@@ -52,7 +52,7 @@ exports.handler = async (event, context) => {
         debug: {
           apiKeyLength: process.env.GEMINI_API_KEY.length,
           apiKeyPrefix: process.env.GEMINI_API_KEY.substring(0, 4),
-          model: "gemini-2.0-flash-exp",
+          model: "gemini-2.0-flash",
         },
       }),
     };

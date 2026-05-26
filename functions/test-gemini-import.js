@@ -14,7 +14,7 @@ exports.handler = async (event, context) => {
 
     // Test if we can get a model
     const geminiModel = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash",
     });
     console.log("✅ Gemini model created");
 
