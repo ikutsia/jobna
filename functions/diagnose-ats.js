@@ -61,7 +61,7 @@ exports.handler = async (event, context) => {
         const { GoogleGenerativeAI } = require("@google/generative-ai");
         const genAI = new GoogleGenerativeAI(envVars.GEMINI_API_KEY);
         const geminiModel = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash",
+          model: "gemini-2.5-flash-lite",
         });
 
         const testPrompt =

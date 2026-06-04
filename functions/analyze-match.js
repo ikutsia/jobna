@@ -8,7 +8,7 @@ try {
 
   // Initialize Gemini AI model
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   console.log("✅ Gemini model initialized");
 } catch (error) {
   console.error("❌ MODULE LOADING ERROR:", error);
@@ -503,7 +503,7 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
         },
         recommendations,
       },
-      modelUsed: "Gemini 1.5 Flash (Pure Gemini - No OpenAI)",
+      modelUsed: "Gemini 2.5 Flash Lite (Pure Gemini - No OpenAI)",
       analysisTimestamp: new Date().toISOString(),
     };
 
