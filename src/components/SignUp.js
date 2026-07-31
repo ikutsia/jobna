@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../firebase/auth";
+import { isEmailWhitelisted } from "../firebase/firestore";
 
 function SignUp() {
   const navigate = useNavigate();
@@ -86,6 +87,22 @@ function SignUp() {
       setSubmitError("");
 
       try {
+        const whitelistResult = await isEmailWhitelisted(formData.email);
+
+        if (!whitelistResult.success) {
+          setSubmitError(
+            "Unable to verify beta access right now. Please try again later."
+          );
+          return;
+        }
+
+        if (!whitelistResult.allowed) {
+          setSubmitError(
+            "This email is not authorized for the Jobilot Beta. Please apply for our waitlist on Google Forms!"
+          );
+          return;
+        }
+
         const result = await registerUser(
           formData.email,
           formData.password,

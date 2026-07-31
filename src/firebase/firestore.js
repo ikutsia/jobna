@@ -14,6 +14,28 @@ import {
 } from "firebase/firestore";
 import { db } from "./config";
 
+/**
+ * Check if an email is on the beta whitelist.
+ * Expects a doc in `whitelist` whose ID is the normalized email
+ * (lowercase, trimmed), e.g. whitelist/user@example.com
+ */
+export const isEmailWhitelisted = async (email) => {
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return { success: true, allowed: false };
+    }
+
+    const docRef = doc(db, "whitelist", normalizedEmail);
+    const docSnap = await getDoc(docRef);
+
+    return { success: true, allowed: docSnap.exists() };
+  } catch (error) {
+    console.error("Whitelist check error:", error);
+    return { success: false, allowed: false, error: error.message };
+  }
+};
+
 // User Profile Operations
 export const createUserProfile = async (uid, userData) => {
   try {
