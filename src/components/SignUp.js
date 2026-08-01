@@ -98,7 +98,7 @@ function SignUp() {
 
         if (!whitelistResult.allowed) {
           setSubmitError(
-            "This email is not authorized for the Jobilot Beta. Please apply for our waitlist on Google Forms!"
+            "Thanks for your interest! Jobilot is in a closed beta. This email isn’t on the beta whitelist. Apply for access on our waitlist: https://docs.google.com/forms/d/1HQKEO02oaLqJF2_vJzzdK2byl4mfFNUNyr9lvx22HCo/viewform"
           );
           return;
         }
