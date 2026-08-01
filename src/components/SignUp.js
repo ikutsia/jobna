@@ -7,6 +7,7 @@ function SignUp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [isWhitelistError, setIsWhitelistError] = useState(false);
   const [hasPendingCV, setHasPendingCV] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -85,6 +86,7 @@ function SignUp() {
     if (validateForm()) {
       setLoading(true);
       setSubmitError("");
+      setIsWhitelistError(false);
 
       try {
         const whitelistResult = await isEmailWhitelisted(formData.email);
@@ -97,8 +99,9 @@ function SignUp() {
         }
 
         if (!whitelistResult.allowed) {
+          setIsWhitelistError(true);
           setSubmitError(
-            "Thanks for your interest! Jobilot is in a closed beta. This email isn’t on the beta whitelist. Apply for access on our waitlist: https://docs.google.com/forms/d/1HQKEO02oaLqJF2_vJzzdK2byl4mfFNUNyr9lvx22HCo/viewform"
+            "Thanks for your interest! Jobilot is in a closed beta. This email isn’t on the beta whitelist."
           );
           return;
         }
@@ -179,7 +182,21 @@ function SignUp() {
           {/* Error Message */}
           {submitError && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {submitError}
+              {isWhitelistError ? (
+                <>
+                  <p>{submitError}</p>
+                  <a
+                    href="https://docs.google.com/forms/d/1HQKEO02oaLqJF2_vJzzdK2byl4mfFNUNyr9lvx22HCo/viewform"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-2 font-semibold text-blue-700 underline hover:text-blue-900"
+                  >
+                    Apply for Access to Closed Beta
+                  </a>
+                </>
+              ) : (
+                submitError
+              )}
             </div>
           )}
 
