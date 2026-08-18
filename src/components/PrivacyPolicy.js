@@ -101,6 +101,7 @@ function PrivacyPolicy() {
                       <li>Job description data for matching algorithms</li>
                       <li>Application history and success metrics</li>
                       <li>Feedback on AI recommendations and suggestions</li>
+                      <li><strong>Extension Web Content Capture:</strong> When you explicitly click the capture button within the Jobna Chrome extension, the extension reads on-page job posting content (such as job title, company name, location, and full job description) strictly to save and sync it to your personal dashboard.</li>
                     </ul>
                   </div>
                 </div>
@@ -165,6 +166,32 @@ function PrivacyPolicy() {
                     <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
                     <li><strong>Consent:</strong> When you explicitly authorize us to share specific information</li>
                     <li><strong>Aggregated Data:</strong> Statistical information that cannot identify individual users</li>
+                  </ul>
+                </div>
+              </section>
+
+              {/* Chrome Web Store Limited Use Disclosure */}
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  5.1 Chrome Web Store Limited Use Disclosure
+                </h2>
+                <div className="space-y-3">
+                  <p className="text-gray-700 leading-relaxed">
+                    Jobna's use and transfer to any other app of information received from Google Chrome APIs will adhere to the{" "}
+                    <a
+                      href="https://developer.chrome.com/docs/webstore/program-policies/limited-use/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Chrome Web Store User Data Policy
+                    </a>
+                    , including the Limited Use requirements. Specifically:
+                  </p>
+                  <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                    <li>We only use user data to provide or improve the core functionality of the Jobna extension (capturing and tracking job leads).</li>
+                    <li>We do not transfer user data to third parties, except as necessary to provide or improve single-purpose extension features, comply with applicable laws, or protect security.</li>
+                    <li>We do not sell user data, use user data for targeted advertising, or use user data to evaluate creditworthiness or for lending purposes.</li>
                   </ul>
                 </div>
               </section>
