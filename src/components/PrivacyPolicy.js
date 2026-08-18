@@ -34,7 +34,7 @@ function PrivacyPolicy() {
             Privacy Policy
           </h1>
           <p className="text-lg text-gray-600">
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: August 18, 2026
           </p>
         </div>
 
@@ -295,10 +295,13 @@ function PrivacyPolicy() {
                 </p>
                 <div className="mt-3 p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-700">
-                    <strong>Email:</strong> privacy@jobna.ai<br />
-                    <strong>Address:</strong> [Your Company Address]<br />
-                    <strong>Phone:</strong> [Your Phone Number]<br />
-                    <strong>Data Protection Officer:</strong> dpo@jobna.ai
+                    <strong>Email:</strong>{" "}
+                    <a
+                      href="mailto:jobna.ai.co@gmail.com"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      jobna.ai.co@gmail.com
+                    </a>
                   </p>
                 </div>
               </section>
