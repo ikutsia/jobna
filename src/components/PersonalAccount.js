@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser, logoutUser } from "../firebase/auth";
-import { getUserProfile, updateUserProfile } from "../firebase/firestore";
+import {
+  getUserProfile,
+  getUserJobLeads,
+  updateUserProfile,
+} from "../firebase/firestore";
 
 function PersonalAccount() {
   const navigate = useNavigate();
@@ -11,6 +15,8 @@ function PersonalAccount() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [updateMessage, setUpdateMessage] = useState("");
+  const [jobLeads, setJobLeads] = useState([]);
+  const [jobLeadsLoading, setJobLeadsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,14 +29,25 @@ function PersonalAccount() {
       setUser(currentUser);
 
       try {
-        const profileResult = await getUserProfile(currentUser.uid);
+        const [profileResult, jobLeadsResult] = await Promise.all([
+          getUserProfile(currentUser.uid),
+          getUserJobLeads(currentUser.uid),
+        ]);
+
         if (profileResult.success) {
           setUserProfile(profileResult.data);
           setEditForm(profileResult.data);
         }
+
+        if (jobLeadsResult.success) {
+          setJobLeads(jobLeadsResult.data);
+        } else {
+          console.error("Error fetching job leads:", jobLeadsResult.error);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
+        setJobLeadsLoading(false);
         setLoading(false);
       }
     };
@@ -80,6 +97,61 @@ function PersonalAccount() {
     } catch (error) {
       setUpdateMessage("Error updating profile: " + error.message);
     }
+  };
+
+  const getLeadTitle = (lead) =>
+    lead.title || lead.jobTitle || lead.position || "Untitled job lead";
+
+  const getLeadCompany = (lead) =>
+    lead.company || lead.companyName || lead.organization || "";
+
+  const getLeadDescription = (lead) =>
+    lead.description ||
+    lead.jobDescription ||
+    lead.fullDescription ||
+    lead.summary ||
+    "";
+
+  const formatLeadDate = (value) => {
+    if (!value) return "Unknown date";
+
+    if (typeof value.toDate === "function") {
+      return value.toDate().toLocaleDateString();
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? "Unknown date"
+      : parsed.toLocaleDateString();
+  };
+
+  const handleAnalyzeLead = (lead) => {
+    const leadTitle = getLeadTitle(lead);
+    const leadCompany = getLeadCompany(lead);
+    const leadLocation = lead.location || lead.city || "";
+    const leadDescription = getLeadDescription(lead);
+
+    const jdText = [
+      leadTitle && `Job Title: ${leadTitle}`,
+      leadCompany && `Company: ${leadCompany}`,
+      leadLocation && `Location: ${leadLocation}`,
+      leadDescription && `Description:\n${leadDescription}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    localStorage.setItem("jdText", jdText);
+    localStorage.setItem(
+      "uploadedJD",
+      JSON.stringify({
+        fileName: `${leadTitle}.txt`,
+        fileType: "Captured Job Lead",
+        uploadedAt: new Date().toISOString(),
+        source: lead.sourceUrl || lead.url || "Saved job lead",
+      })
+    );
+
+    navigate("/analyze-now");
   };
 
   if (loading) {
@@ -426,6 +498,91 @@ function PersonalAccount() {
               >
                 Browse Jobs
               </button>
+            </div>
+
+            {/* Saved Job Leads */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Saved Job Leads
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Leads captured from the extension are saved here for quick
+                    review and analysis.
+                  </p>
+                </div>
+                <span className="text-sm font-medium text-blue-600">
+                  {jobLeads.length} saved
+                </span>
+              </div>
+
+              {jobLeadsLoading ? (
+                <p className="text-gray-500">Loading saved job leads...</p>
+              ) : jobLeads.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                  <p className="text-gray-600 font-medium">
+                    No saved job leads yet.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Use the Chrome extension on a job posting to capture your
+                    first lead.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {jobLeads.map((lead) => {
+                    const leadTitle = getLeadTitle(lead);
+                    const leadCompany = getLeadCompany(lead);
+                    const leadDescription = getLeadDescription(lead);
+
+                    return (
+                      <div
+                        key={lead.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0">
+                            <h4 className="text-lg font-semibold text-gray-900">
+                              {leadTitle}
+                            </h4>
+                            {leadCompany && (
+                              <p className="text-sm font-medium text-indigo-600 mt-1">
+                                {leadCompany}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-2">
+                              Saved on {formatLeadDate(lead.createdAt)}
+                            </p>
+                            <p className="text-gray-700 mt-3 line-clamp-4 whitespace-pre-line">
+                              {leadDescription || "No description available."}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:min-w-[180px]">
+                            <button
+                              onClick={() => handleAnalyzeLead(lead)}
+                              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                            >
+                              Analyze This Lead
+                            </button>
+                            {(lead.sourceUrl || lead.url) && (
+                              <a
+                                href={lead.sourceUrl || lead.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold py-2 px-4 rounded-lg transition-colors text-center"
+                              >
+                                Open Source
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 

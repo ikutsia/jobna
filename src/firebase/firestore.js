@@ -133,6 +133,37 @@ export const getUserJobApplications = async (uid) => {
   }
 };
 
+// Job Lead Operations
+export const getUserJobLeads = async (uid) => {
+  try {
+    const q = query(collection(db, "job_leads"), where("userId", "==", uid));
+    const querySnapshot = await getDocs(q);
+    const jobLeads = [];
+
+    querySnapshot.forEach((doc) => {
+      jobLeads.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    jobLeads.sort((a, b) => {
+      const aTime =
+        a.createdAt?.toMillis?.() ||
+        (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const bTime =
+        b.createdAt?.toMillis?.() ||
+        (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      return bTime - aTime;
+    });
+
+    return { success: true, data: jobLeads };
+  } catch (error) {
+    console.error("Get job leads error:", error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Resume Analysis Operations (for future use)
 export const saveResumeAnalysis = async (uid, analysisData) => {
   try {
