@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, logoutUser } from "../firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import { logoutUser } from "../firebase/auth";
+import { auth } from "../firebase/config";
 import {
   getUserProfile,
   getUserJobLeads,
@@ -19,8 +21,7 @@ function PersonalAccount() {
   const [jobLeadsLoading, setJobLeadsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const currentUser = getCurrentUser();
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         navigate("/login");
         return;
@@ -50,9 +51,9 @@ function PersonalAccount() {
         setJobLeadsLoading(false);
         setLoading(false);
       }
-    };
+    });
 
-    checkAuth();
+    return () => unsubscribe();
   }, [navigate]);
 
   const handleLogout = async () => {

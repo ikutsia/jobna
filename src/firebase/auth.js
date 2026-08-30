@@ -51,11 +51,23 @@ export const syncAuthUserToExtension = async (user) => {
       console.log("Could not refresh Firebase ID token:", tokenError.message);
     }
 
+    if (!idToken) {
+      console.log(
+        "Cannot sync extension auth: Firebase ID token is missing. Sign in again."
+      );
+      return;
+    }
+
     const payload = {
       action: "SET_AUTH_USER",
       userId: user.uid,
       idToken,
     };
+
+    console.log(
+      "Syncing extension auth with UID + idToken for:",
+      user.uid
+    );
 
     // Backup channel: content script on this origin forwards to background
     window.postMessage(

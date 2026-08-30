@@ -148,13 +148,14 @@ export const getUserJobLeads = async (uid) => {
     });
 
     jobLeads.sort((a, b) => {
-      const aTime =
-        a.createdAt?.toMillis?.() ||
-        (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      const bTime =
-        b.createdAt?.toMillis?.() ||
-        (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      return bTime - aTime;
+      const parseTime = (val) => {
+        if (!val) return 0;
+        if (typeof val.toMillis === "function") return val.toMillis();
+        const parsed = new Date(val).getTime();
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      return parseTime(b.createdAt) - parseTime(a.createdAt);
     });
 
     return { success: true, data: jobLeads };
