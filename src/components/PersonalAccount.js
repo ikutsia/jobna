@@ -444,31 +444,31 @@ function PersonalAccount() {
                   <div className="text-white font-medium text-sm mb-2">
                     Job leads
                   </div>
-                  <div className="text-gray-300 text-xs">10</div>
+                  <div className="text-gray-300 text-xs">{jobLeads.length}</div>
                 </div>
                 <div className="text-center border-r border-gray-600 px-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Applied
                   </div>
-                  <div className="text-gray-300 text-xs">9</div>
+                  <div className="text-gray-300 text-xs">0</div>
                 </div>
                 <div className="text-center border-r border-gray-600 px-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Post Comm
                   </div>
-                  <div className="text-gray-300 text-xs">5</div>
+                  <div className="text-gray-300 text-xs">0</div>
                 </div>
                 <div className="text-center border-r border-gray-600 px-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Not a match
                   </div>
-                  <div className="text-gray-300 text-xs">4</div>
+                  <div className="text-gray-300 text-xs">0</div>
                 </div>
                 <div className="text-center pl-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Next stage
                   </div>
-                  <div className="text-gray-300 text-xs">1</div>
+                  <div className="text-gray-300 text-xs">0</div>
                 </div>
               </div>
             </div>
