@@ -502,7 +502,7 @@ function PersonalAccount() {
             </div>
 
             {/* Saved Job Leads */}
-            <div className="bg-gray-50 rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">
@@ -540,7 +540,7 @@ function PersonalAccount() {
                     return (
                       <div
                         key={lead.id}
-                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                        className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                       >
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                           <div className="min-w-0">
