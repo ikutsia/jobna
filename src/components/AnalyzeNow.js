@@ -31,35 +31,35 @@ const uniqueNormalizedTerms = (items) => {
   return unique;
 };
 
-const clampPercent = (value) =>
-  Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+const pickNumeric = (value) =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
-const isMissingAtsScore = (section) => {
-  if (section == null) return true;
-  if (typeof section.score !== "number" || Number.isNaN(section.score)) {
-    return true;
-  }
-  if (section.score > 0) return false;
-  const hasYears =
-    Number(section.yearsFound || section.candidate) > 0 ||
-    Number(section.yearsRequired || section.required) > 0;
-  return !hasYears;
-};
-
-const withFallbackScore = (section, overallScore, offset = 0) => {
-  if (!isMissingAtsScore(section)) {
-    return {
-      ...section,
-      score: clampPercent(section.score),
-      estimated: false,
-    };
+const mergeScoreSection = (section) => {
+  if (!section || typeof section !== "object") {
+    return { score: null };
   }
 
   return {
-    ...(section || {}),
-    score: clampPercent(overallScore + offset),
-    estimated: true,
+    ...section,
+    score: pickNumeric(section.score),
+    yearsFound: pickNumeric(section.yearsFound ?? section.candidate),
+    yearsRequired: pickNumeric(section.yearsRequired ?? section.required),
+    candidate: pickNumeric(section.yearsFound ?? section.candidate),
+    required: pickNumeric(section.yearsRequired ?? section.required),
   };
+};
+
+const formatExperienceDetail = (section) => {
+  const required = section?.yearsRequired ?? section?.required;
+  const found = section?.yearsFound ?? section?.candidate;
+  const hasRequired = typeof required === "number" && required > 0;
+  const hasFound = typeof found === "number" && found > 0;
+
+  if (!hasRequired) {
+    return "Not specified in JD";
+  }
+
+  return `${hasFound ? found : 0} years vs ${required} required`;
 };
 
 const mergeAnalysisResults = (payload) => {
@@ -85,47 +85,22 @@ const mergeAnalysisResults = (payload) => {
   const keywordScore =
     totalKeywords > 0
       ? Math.round((foundCount / totalKeywords) * 100)
-      : clampPercent(payload.keywordAnalysis?.score);
+      : pickNumeric(payload.keywordAnalysis?.score);
 
-  const overallScore = clampPercent(
-    payload.atsAnalysis?.overallScore ?? payload.matchScore ?? keywordScore
-  );
   const incomingBreakdown = payload.atsAnalysis?.breakdown || {};
-
-  const experienceMatch = withFallbackScore(
-    incomingBreakdown.experienceMatch,
-    overallScore,
-    0
+  const experienceMatch = mergeScoreSection(
+    incomingBreakdown.experienceMatch || payload.experienceAnalysis
   );
-  const yearsFound =
-    experienceMatch.yearsFound ?? experienceMatch.candidate ?? 0;
-  const yearsRequired =
-    experienceMatch.yearsRequired ?? experienceMatch.required ?? 0;
-  experienceMatch.candidate = Number(yearsFound) || 0;
-  experienceMatch.required = Number(yearsRequired) || 0;
-  experienceMatch.hasYearData =
-    experienceMatch.candidate > 0 || experienceMatch.required > 0;
-
-  const educationMatch = withFallbackScore(
-    incomingBreakdown.educationMatch,
-    overallScore,
-    -5
-  );
-  const formatScore = withFallbackScore(
-    incomingBreakdown.format,
-    overallScore,
-    5
-  );
-  const contentQuality = withFallbackScore(
-    incomingBreakdown.contentQuality,
-    overallScore,
-    0
+  const educationMatch = mergeScoreSection(incomingBreakdown.educationMatch);
+  const formatScore = mergeScoreSection(incomingBreakdown.format);
+  const contentQuality = mergeScoreSection(
+    incomingBreakdown.contentQuality || payload.contentQualityAnalysis
   );
 
   return {
     ...EMPTY_ANALYSIS_RESULTS,
     ...payload,
-    matchScore: clampPercent(payload.matchScore ?? overallScore),
+    matchScore: pickNumeric(payload.matchScore) ?? 0,
     skillsMatch: displayMatches,
     missingSkills,
     recommendations: payload.recommendations || [],
@@ -134,7 +109,7 @@ const mergeAnalysisResults = (payload) => {
       matches: displayMatches,
       found: foundCount,
       total: totalKeywords || foundCount,
-      score: keywordScore,
+      score: keywordScore ?? 0,
       description: `${foundCount} out of ${
         totalKeywords || foundCount
       } keywords found`,
@@ -142,13 +117,16 @@ const mergeAnalysisResults = (payload) => {
     atsAnalysis: {
       ...EMPTY_ANALYSIS_RESULTS.atsAnalysis,
       ...payload.atsAnalysis,
-      overallScore,
+      overallScore:
+        pickNumeric(payload.atsAnalysis?.overallScore) ??
+        pickNumeric(payload.matchScore) ??
+        0,
       breakdown: {
         keywordMatch: {
           ...(incomingBreakdown.keywordMatch || {}),
           matched: foundCount,
           total: totalKeywords || foundCount,
-          score: keywordScore,
+          score: keywordScore ?? 0,
         },
         experienceMatch,
         educationMatch,
@@ -159,6 +137,38 @@ const mergeAnalysisResults = (payload) => {
         payload.atsAnalysis?.recommendations || payload.recommendations || [],
     },
   };
+};
+
+const AtsBreakdownCard = ({ title, score, subtitle, getScoreColor, getScoreBgColor }) => {
+  const hasScore = typeof score === "number" && Number.isFinite(score);
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <div className="flex justify-between items-center mb-2">
+        <span className="font-medium text-gray-900">{title}</span>
+        <span
+          className={`text-lg font-bold ${
+            hasScore ? getScoreColor(score) : "text-gray-500"
+          }`}
+        >
+          {hasScore ? `${score}%` : "N/A"}
+        </span>
+      </div>
+      <p className="text-sm text-gray-600">{subtitle}</p>
+      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+        <div
+          className={`h-2 rounded-full ${
+            hasScore
+              ? getScoreBgColor(score)
+                  .replace("bg-", "bg-")
+                  .replace("-100", "-500")
+              : "bg-gray-300"
+          }`}
+          style={{ width: `${hasScore ? score : 0}%` }}
+        ></div>
+      </div>
+    </div>
+  );
 };
 
 // AI components removed - now using single AI analysis mode
@@ -848,167 +858,69 @@ function AnalyzeNow() {
                   </div>
                 </div>
 
-                {/* Experience Match */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-900">
-                      Experience
-                    </span>
-                    <span
-                      className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                          ?.score || 0
-                      )}`}
-                    >
-                      {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                        ?.score || 0}
-                      %
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                      ?.hasYearData
-                      ? `${
-                          analysisResults.atsAnalysis.breakdown.experienceMatch
-                            .candidate || 0
-                        } years vs ${
-                          analysisResults.atsAnalysis.breakdown.experienceMatch
-                            .required || 0
-                        } required`
-                      : "Estimated from overall match"}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                          ?.score || 0
-                      )
-                        .replace("bg-", "bg-")
-                        .replace("-100", "-500")}`}
-                      style={{
-                        width: `${
-                          analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                            ?.score || 0
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                {/* Experience Match: atsAnalysis.breakdown.experienceMatch
+                    or top-level experienceAnalysis (score, yearsRequired, yearsFound) */}
+                <AtsBreakdownCard
+                  title="Experience"
+                  score={
+                    analysisResults?.atsAnalysis?.breakdown?.experienceMatch
+                      ?.score
+                  }
+                  subtitle={formatExperienceDetail(
+                    analysisResults?.atsAnalysis?.breakdown?.experienceMatch
+                  )}
+                  getScoreColor={getATSScoreColor}
+                  getScoreBgColor={getATSScoreBgColor}
+                />
 
-                {/* Education Match */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-900">Education</span>
-                    <span
-                      className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults?.atsAnalysis?.breakdown?.educationMatch
-                          ?.score || 0
-                      )}`}
-                    >
-                      {analysisResults?.atsAnalysis?.breakdown?.educationMatch
-                        ?.score || 0}
-                      %
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {analysisResults?.atsAnalysis?.breakdown?.educationMatch
-                      ?.estimated
-                      ? "Estimated from overall match"
-                      : "Degree and certification match"}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults?.atsAnalysis?.breakdown?.educationMatch
-                          ?.score || 0
-                      )
-                        .replace("bg-", "bg-")
-                        .replace("-100", "-500")}`}
-                      style={{
-                        width: `${
-                          analysisResults?.atsAnalysis?.breakdown?.educationMatch
-                            ?.score || 0
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                {/* Education is not returned by analyze-match unless explicitly scored */}
+                <AtsBreakdownCard
+                  title="Education"
+                  score={
+                    analysisResults?.atsAnalysis?.breakdown?.educationMatch
+                      ?.score
+                  }
+                  subtitle={
+                    typeof analysisResults?.atsAnalysis?.breakdown
+                      ?.educationMatch?.score === "number"
+                      ? "Degree and certification match"
+                      : "N/A"
+                  }
+                  getScoreColor={getATSScoreColor}
+                  getScoreBgColor={getATSScoreBgColor}
+                />
 
-                {/* Format Score */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-900">Format</span>
-                    <span
-                      className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults?.atsAnalysis?.breakdown?.format?.score || 0
-                      )}`}
-                    >
-                      {analysisResults?.atsAnalysis?.breakdown?.format?.score || 0}
-                      %
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {analysisResults?.atsAnalysis?.breakdown?.format?.estimated
-                      ? "Estimated from overall match"
-                      : "ATS-friendly structure"}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults?.atsAnalysis?.breakdown?.format?.score || 0
-                      )
-                        .replace("bg-", "bg-")
-                        .replace("-100", "-500")}`}
-                      style={{
-                        width: `${
-                          analysisResults?.atsAnalysis?.breakdown?.format?.score ||
-                          0
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                {/* Format is not returned by analyze-match unless explicitly scored */}
+                <AtsBreakdownCard
+                  title="Format"
+                  score={analysisResults?.atsAnalysis?.breakdown?.format?.score}
+                  subtitle={
+                    typeof analysisResults?.atsAnalysis?.breakdown?.format
+                      ?.score === "number"
+                      ? "ATS-friendly structure"
+                      : "N/A"
+                  }
+                  getScoreColor={getATSScoreColor}
+                  getScoreBgColor={getATSScoreBgColor}
+                />
 
-                {/* Content Quality */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-900">
-                      Content Quality
-                    </span>
-                    <span
-                      className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults?.atsAnalysis?.breakdown?.contentQuality
-                          ?.score || 0
-                      )}`}
-                    >
-                      {analysisResults?.atsAnalysis?.breakdown?.contentQuality
-                        ?.score || 0}
-                      %
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {analysisResults?.atsAnalysis?.breakdown?.contentQuality
-                      ?.estimated
-                      ? "Estimated from overall match"
-                      : "Achievements and action verbs"}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults?.atsAnalysis?.breakdown?.contentQuality
-                          ?.score || 0
-                      )
-                        .replace("bg-", "bg-")
-                        .replace("-100", "-500")}`}
-                      style={{
-                        width: `${
-                          analysisResults?.atsAnalysis?.breakdown?.contentQuality
-                            ?.score || 0
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                {/* Content Quality: atsAnalysis.breakdown.contentQuality
+                    or top-level contentQualityAnalysis.score */}
+                <AtsBreakdownCard
+                  title="Content Quality"
+                  score={
+                    analysisResults?.atsAnalysis?.breakdown?.contentQuality
+                      ?.score
+                  }
+                  subtitle={
+                    typeof analysisResults?.atsAnalysis?.breakdown
+                      ?.contentQuality?.score === "number"
+                      ? "Achievements and action verbs"
+                      : "N/A"
+                  }
+                  getScoreColor={getATSScoreColor}
+                  getScoreBgColor={getATSScoreBgColor}
+                />
               </div>
 
               {/* ATS Recommendations */}

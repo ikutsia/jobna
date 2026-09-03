@@ -484,6 +484,11 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
       );
     }
 
+    const exp = experienceAnalysis.experienceAnalysis || {};
+    const cq = contentQualityAnalysis.contentQuality || {};
+    const pickNumber = (value) =>
+      typeof value === "number" && Number.isFinite(value) ? value : undefined;
+
     const analysis = {
       matchScore: overallScore,
       skillsMatch: matchedKeywords.slice(0, foundCount),
@@ -503,8 +508,8 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
         matches: matchedKeywords.slice(0, foundCount),
         description: `${foundCount} out of ${totalKeywords} keywords found`,
       },
-      experienceAnalysis: experienceAnalysis.experienceAnalysis || {},
-      contentQualityAnalysis: contentQualityAnalysis.contentQuality || {},
+      experienceAnalysis: exp,
+      contentQualityAnalysis: cq,
       atsAnalysis: {
         overallScore,
         grade,
@@ -515,24 +520,20 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
             total: totalKeywords,
           },
           experienceMatch: {
-            score: experienceAnalysis.experienceAnalysis?.score || overallScore,
-            yearsRequired:
-              experienceAnalysis.experienceAnalysis?.yearsRequired || 0,
-            yearsFound: experienceAnalysis.experienceAnalysis?.yearsFound || 0,
-            candidate:
-              experienceAnalysis.experienceAnalysis?.yearsFound || 0,
-            required:
-              experienceAnalysis.experienceAnalysis?.yearsRequired || 0,
+            score: pickNumber(exp.score),
+            yearsRequired: pickNumber(exp.yearsRequired),
+            yearsFound: pickNumber(exp.yearsFound),
+            candidate: pickNumber(exp.yearsFound),
+            required: pickNumber(exp.yearsRequired),
+            quality: exp.quality,
+            relevance: exp.relevance,
           },
-          educationMatch: {
-            score: overallScore,
-          },
-          format: {
-            score: Math.min(100, overallScore + 5),
-          },
+          educationMatch: {},
+          format: {},
           contentQuality: {
-            score:
-              contentQualityAnalysis.contentQuality?.score || overallScore,
+            score: pickNumber(cq.score),
+            achievements: cq.achievements,
+            actionVerbs: cq.actionVerbs,
           },
         },
         recommendations,
