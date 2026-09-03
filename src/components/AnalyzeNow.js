@@ -264,24 +264,32 @@ function AnalyzeNow() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Analysis failed");
-      }
-
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       console.log("🔍 Analysis Response:", data);
       console.log("🤖 Model Used:", data.data?.modelUsed);
-      if (!data?.data) {
-        throw new Error("Analysis returned no data. Please try again.");
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || data.details || "Analysis Failed");
       }
-      const results = mergeAnalysisResults(data.data);
+
+      const rawResults = data.data;
+      const hasScore =
+        typeof rawResults?.matchScore === "number" ||
+        typeof rawResults?.atsAnalysis?.overallScore === "number" ||
+        typeof rawResults?.keywordAnalysis?.score === "number";
+
+      if (!rawResults || !hasScore) {
+        throw new Error("Analysis Failed");
+      }
+
+      const results = mergeAnalysisResults(rawResults);
 
       setAnalysisResults(results);
       setAnalysisData({
         isAnalyzing: false,
         analysisComplete: true,
         analysisProgress: 100,
+        error: null,
       });
 
       // Update usage info
@@ -289,7 +297,10 @@ function AnalyzeNow() {
     } catch (error) {
       console.error("Analysis error:", error);
 
-      let errorMessage = error.message;
+      let errorMessage = error.message || "Analysis Failed";
+      if (!errorMessage.toLowerCase().includes("analysis failed")) {
+        errorMessage = `Analysis Failed: ${errorMessage}`;
+      }
 
       // Handle specific API errors
       if (error.message.includes("429") || error.message.includes("quota")) {
@@ -312,6 +323,7 @@ function AnalyzeNow() {
           "AI analysis service is not properly configured. Please contact support.";
       }
 
+      setAnalysisResults(EMPTY_ANALYSIS_RESULTS);
       setAnalysisData({
         isAnalyzing: false,
         analysisComplete: false,
@@ -497,10 +509,10 @@ function AnalyzeNow() {
 
               {/* Error Display */}
               {analysisData?.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
+                  <div className="flex items-start">
                     <svg
-                      className="w-5 h-5 text-red-400 mr-2"
+                      className="w-5 h-5 text-red-400 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -512,7 +524,14 @@ function AnalyzeNow() {
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <p className="text-sm text-red-800">{analysisData?.error}</p>
+                    <div>
+                      <p className="text-sm font-semibold text-red-800">
+                        Analysis Failed
+                      </p>
+                      <p className="text-sm text-red-700 mt-1">
+                        {analysisData.error}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

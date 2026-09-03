@@ -69,6 +69,11 @@ exports.handler = async (event, context) => {
       userId: userId?.substring(0, 8) + "...",
     });
 
+    console.log("API Request Payload:", {
+      resumeText: cvText,
+      jobDescription: jdText,
+    });
+
     if (!cvText || !jdText || !userId) {
       return {
         statusCode: 400,
@@ -102,6 +107,23 @@ exports.handler = async (event, context) => {
     // Perform comprehensive AI analysis with Gemini
     console.log("🚀 CALLING GEMINI API FOR REAL ANALYSIS...");
     const analysisResult = await performAIAnalysis(cvText, jdText);
+    const hasScore =
+      typeof analysisResult?.matchScore === "number" ||
+      typeof analysisResult?.atsAnalysis?.overallScore === "number" ||
+      typeof analysisResult?.keywordAnalysis?.score === "number";
+
+    if (!hasScore) {
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          success: false,
+          error: "Analysis Failed",
+        }),
+      };
+    }
 
     return {
       statusCode: 200,
@@ -116,6 +138,19 @@ exports.handler = async (event, context) => {
     };
   } catch (error) {
     console.error("AI Analysis error:", error);
+
+    if (error.message === "AI output parse error") {
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          success: false,
+          error: "AI output parse error",
+        }),
+      };
+    }
 
     // Provide more specific error messages
     let errorMessage = "Internal server error";
@@ -146,6 +181,7 @@ exports.handler = async (event, context) => {
         "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({
+        success: false,
         error: errorMessage,
         details: details,
         timestamp: new Date().toISOString(),
@@ -253,9 +289,7 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
       );
     } catch (error) {
       console.error("❌ Experience analysis failed:", error);
-      // Don't throw error, use fallback instead
-      experienceText =
-        '{"experienceAnalysis": {"score": 50, "yearsRequired": 0, "yearsFound": 0, "quality": "Unable to analyze", "relevance": "Unable to analyze", "specificMismatches": [], "overallAssessment": "Analysis failed"}}';
+      experienceText = null;
     }
 
     // Content quality analysis
@@ -292,63 +326,41 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
       );
     } catch (error) {
       console.error("❌ Content quality analysis failed:", error);
-      // Don't throw error, use fallback instead
-      contentText =
-        '{"contentQuality": {"score": 50, "achievements": "Unable to analyze", "actionVerbs": "Unable to analyze", "professionalTone": "Unable to analyze", "suggestions": [], "geminiAnalysis": "Analysis failed"}}';
+      contentText = null;
     }
 
-    // Parse responses with robust JSON extraction
-    const parseJsonResponse = (text, fallback = {}) => {
+    // Parse responses; invalid Gemini output must fail the request
+    const parseJsonResponse = (text) => {
       try {
         console.log("🔍 DEBUG: Parsing text:", text?.substring(0, 200) + "...");
 
-        // Method 1: Direct JSON object
-        const directMatch = text.match(/\{[\s\S]*?\}/);
+        const directMatch = text?.match(/\{[\s\S]*\}/);
         if (directMatch) {
-          console.log("✅ Found direct JSON match");
           return JSON.parse(directMatch[0]);
         }
 
-        // Method 2: JSON between code blocks
-        const codeBlockMatch = text.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+        const codeBlockMatch = text?.match(/```json\s*(\{[\s\S]*?\})\s*```/);
         if (codeBlockMatch) {
-          console.log("✅ Found code block JSON match");
           return JSON.parse(codeBlockMatch[1]);
         }
 
-        // Method 3: Look for specific field patterns
-        const fieldMatch = text.match(
-          /\{[\s\S]*"(jobKeywords|cvKeywords|experienceAnalysis|contentQuality)"[\s\S]*?\}/
+        const fieldMatch = text?.match(
+          /\{[\s\S]*"(jobKeywords|cvKeywords|experienceAnalysis|contentQuality)"[\s\S]*\}/
         );
         if (fieldMatch) {
-          console.log("✅ Found field pattern JSON match");
           return JSON.parse(fieldMatch[0]);
         }
 
-        // Method 4: Try to find any JSON-like structure
-        const anyJsonMatch = text.match(/\{[^{}]*"[^{}]*"[^{}]*\}/);
-        if (anyJsonMatch) {
-          console.log("✅ Found any JSON match");
-          return JSON.parse(anyJsonMatch[0]);
-        }
-
-        console.log("❌ No JSON found in text");
-        return fallback;
+        console.error("AI output parse error. Raw Gemini output:", text);
+        throw new Error("AI output parse error");
       } catch (e) {
-        console.error("JSON parsing failed:", e);
-        console.error("Text that failed:", text?.substring(0, 500));
-        return fallback;
+        console.error("AI output parse error. Raw Gemini output:", text);
+        throw new Error("AI output parse error");
       }
     };
 
     console.log("🔍 DEBUG: Parsing keyword analysis...");
-    const keywordAnalysis = parseJsonResponse(keywordText, {
-      jobKeywords: [],
-      cvKeywords: [],
-      matchedKeywords: [],
-      missingKeywords: [],
-      matchPercentage: 0,
-    });
+    const keywordAnalysis = parseJsonResponse(keywordText);
     console.log("🔍 DEBUG: Keyword analysis parsed:", {
       matchPercentage: keywordAnalysis.matchPercentage,
       matchedCount: keywordAnalysis.matchedKeywords?.length || 0,
@@ -356,30 +368,15 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
     });
 
     console.log("🔍 DEBUG: Parsing experience analysis...");
-    const experienceAnalysis = parseJsonResponse(experienceText, {
-      experienceAnalysis: {
-        score: 0,
-        yearsRequired: 0,
-        yearsFound: 0,
-        quality: "Analysis failed",
-        relevance: "Analysis failed",
-        specificMismatches: [],
-        overallAssessment: "Analysis failed",
-      },
-    });
+    const experienceAnalysis = experienceText
+      ? parseJsonResponse(experienceText)
+      : { experienceAnalysis: {} };
     console.log("🔍 DEBUG: Experience analysis parsed:", experienceAnalysis);
 
     console.log("🔍 DEBUG: Parsing content quality analysis...");
-    const contentQualityAnalysis = parseJsonResponse(contentText, {
-      contentQuality: {
-        score: 0,
-        achievements: "Analysis failed",
-        actionVerbs: "Analysis failed",
-        professionalTone: "Analysis failed",
-        suggestions: [],
-        geminiAnalysis: "Analysis failed",
-      },
-    });
+    const contentQualityAnalysis = contentText
+      ? parseJsonResponse(contentText)
+      : { contentQuality: {} };
     console.log(
       "🔍 DEBUG: Content quality analysis parsed:",
       contentQualityAnalysis
@@ -554,79 +551,6 @@ CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks. 
     return analysis;
   } catch (error) {
     console.error("AI analysis error:", error);
-
-    // Provide more specific error information
-    let errorType = "unknown";
-    let errorMessage = "Analysis failed - please try again";
-
-    if (error.message.includes("API key") || !process.env.GEMINI_API_KEY) {
-      errorType = "configuration";
-      errorMessage =
-        "Gemini API key not configured. Please contact support to resolve this issue.";
-    } else if (
-      error.message.includes("quota") ||
-      error.message.includes("limit")
-    ) {
-      errorType = "quota";
-      errorMessage =
-        "API quota exceeded. Please try again later or contact support.";
-    } else if (
-      error.message.includes("network") ||
-      error.message.includes("timeout")
-    ) {
-      errorType = "network";
-      errorMessage =
-        "Network error occurred. Please check your connection and try again.";
-    }
-
-    return {
-      matchScore: 0,
-      skillsMatch: [],
-      missingSkills: [],
-      recommendations: [errorMessage],
-      assessment: `AI analysis encountered an error (${errorType}). ${errorMessage}`,
-      keywordAnalysis: {
-        score: 0,
-        found: 0,
-        total: 0,
-        matches: [],
-        description: `Analysis failed: ${errorType}`,
-      },
-      experienceAnalysis: {
-        score: 0,
-        yearsRequired: 0,
-        yearsFound: 0,
-        quality: `Analysis failed: ${errorType}`,
-      },
-      contentQualityAnalysis: {
-        score: 0,
-        achievements: `Analysis failed: ${errorType}`,
-        actionVerbs: `Analysis failed: ${errorType}`,
-        professionalTone: `Analysis failed: ${errorType}`,
-        suggestions: [],
-      },
-      atsAnalysis: {
-        overallScore: 0,
-        grade: "F",
-        breakdown: {
-          keywordMatch: { score: 0, matched: 0, total: 0 },
-          experienceMatch: { score: 0, yearsRequired: 0, yearsFound: 0 },
-          contentQuality: { score: 0 },
-        },
-        recommendations: [
-          {
-            type: "critical",
-            title: "Analysis Failed",
-            description: errorMessage,
-            impact: "High",
-            errorType: errorType,
-          },
-        ],
-      },
-      modelUsed: "Gemini AI (Failed)",
-      analysisTimestamp: new Date().toISOString(),
-      error: error.message,
-      errorType: errorType,
-    };
+    throw error;
   }
 }
