@@ -18,22 +18,143 @@ const EMPTY_ANALYSIS_RESULTS = {
   },
 };
 
+const uniqueNormalizedTerms = (items) => {
+  const seen = new Set();
+  const unique = [];
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    const label = String(item ?? "").trim();
+    const key = label.toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    unique.push(label);
+  });
+  return unique;
+};
+
+const clampPercent = (value) =>
+  Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+
+const isMissingAtsScore = (section) => {
+  if (section == null) return true;
+  if (typeof section.score !== "number" || Number.isNaN(section.score)) {
+    return true;
+  }
+  if (section.score > 0) return false;
+  const hasYears =
+    Number(section.yearsFound || section.candidate) > 0 ||
+    Number(section.yearsRequired || section.required) > 0;
+  return !hasYears;
+};
+
+const withFallbackScore = (section, overallScore, offset = 0) => {
+  if (!isMissingAtsScore(section)) {
+    return {
+      ...section,
+      score: clampPercent(section.score),
+      estimated: false,
+    };
+  }
+
+  return {
+    ...(section || {}),
+    score: clampPercent(overallScore + offset),
+    estimated: true,
+  };
+};
+
 const mergeAnalysisResults = (payload) => {
   if (!payload || typeof payload !== "object") {
     return EMPTY_ANALYSIS_RESULTS;
   }
 
+  const matchedKeywords = uniqueNormalizedTerms(
+    payload.keywordAnalysis?.matches || payload.skillsMatch
+  );
+  const missingSkills = uniqueNormalizedTerms(payload.missingSkills);
+  const reportedTotal = Number(
+    payload.keywordAnalysis?.total ||
+      payload.atsAnalysis?.breakdown?.keywordMatch?.total ||
+      0
+  );
+  const totalKeywords = Math.max(reportedTotal, 0);
+  const foundCount =
+    totalKeywords > 0
+      ? Math.min(matchedKeywords.length, totalKeywords)
+      : matchedKeywords.length;
+  const displayMatches = matchedKeywords.slice(0, foundCount);
+  const keywordScore =
+    totalKeywords > 0
+      ? Math.round((foundCount / totalKeywords) * 100)
+      : clampPercent(payload.keywordAnalysis?.score);
+
+  const overallScore = clampPercent(
+    payload.atsAnalysis?.overallScore ?? payload.matchScore ?? keywordScore
+  );
+  const incomingBreakdown = payload.atsAnalysis?.breakdown || {};
+
+  const experienceMatch = withFallbackScore(
+    incomingBreakdown.experienceMatch,
+    overallScore,
+    0
+  );
+  const yearsFound =
+    experienceMatch.yearsFound ?? experienceMatch.candidate ?? 0;
+  const yearsRequired =
+    experienceMatch.yearsRequired ?? experienceMatch.required ?? 0;
+  experienceMatch.candidate = Number(yearsFound) || 0;
+  experienceMatch.required = Number(yearsRequired) || 0;
+  experienceMatch.hasYearData =
+    experienceMatch.candidate > 0 || experienceMatch.required > 0;
+
+  const educationMatch = withFallbackScore(
+    incomingBreakdown.educationMatch,
+    overallScore,
+    -5
+  );
+  const formatScore = withFallbackScore(
+    incomingBreakdown.format,
+    overallScore,
+    5
+  );
+  const contentQuality = withFallbackScore(
+    incomingBreakdown.contentQuality,
+    overallScore,
+    0
+  );
+
   return {
     ...EMPTY_ANALYSIS_RESULTS,
     ...payload,
-    skillsMatch: payload.skillsMatch || [],
-    missingSkills: payload.missingSkills || [],
+    matchScore: clampPercent(payload.matchScore ?? overallScore),
+    skillsMatch: displayMatches,
+    missingSkills,
     recommendations: payload.recommendations || [],
-    keywordAnalysis: payload.keywordAnalysis || {},
+    keywordAnalysis: {
+      ...(payload.keywordAnalysis || {}),
+      matches: displayMatches,
+      found: foundCount,
+      total: totalKeywords || foundCount,
+      score: keywordScore,
+      description: `${foundCount} out of ${
+        totalKeywords || foundCount
+      } keywords found`,
+    },
     atsAnalysis: {
       ...EMPTY_ANALYSIS_RESULTS.atsAnalysis,
       ...payload.atsAnalysis,
-      breakdown: payload.atsAnalysis?.breakdown || {},
+      overallScore,
+      breakdown: {
+        keywordMatch: {
+          ...(incomingBreakdown.keywordMatch || {}),
+          matched: foundCount,
+          total: totalKeywords || foundCount,
+          score: keywordScore,
+        },
+        experienceMatch,
+        educationMatch,
+        format: formatScore,
+        contentQuality,
+      },
       recommendations:
         payload.atsAnalysis?.recommendations || payload.recommendations || [],
     },
@@ -746,11 +867,15 @@ function AnalyzeNow() {
                   </div>
                   <p className="text-sm text-gray-600">
                     {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                      ?.candidate || 0}{" "}
-                    years vs{" "}
-                    {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
-                      ?.required || 0}{" "}
-                    required
+                      ?.hasYearData
+                      ? `${
+                          analysisResults.atsAnalysis.breakdown.experienceMatch
+                            .candidate || 0
+                        } years vs ${
+                          analysisResults.atsAnalysis.breakdown.experienceMatch
+                            .required || 0
+                        } required`
+                      : "Estimated from overall match"}
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
@@ -786,7 +911,10 @@ function AnalyzeNow() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    Degree and certification match
+                    {analysisResults?.atsAnalysis?.breakdown?.educationMatch
+                      ?.estimated
+                      ? "Estimated from overall match"
+                      : "Degree and certification match"}
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
@@ -820,7 +948,9 @@ function AnalyzeNow() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    ATS-friendly structure
+                    {analysisResults?.atsAnalysis?.breakdown?.format?.estimated
+                      ? "Estimated from overall match"
+                      : "ATS-friendly structure"}
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
@@ -857,7 +987,10 @@ function AnalyzeNow() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    Achievements and action verbs
+                    {analysisResults?.atsAnalysis?.breakdown?.contentQuality
+                      ?.estimated
+                      ? "Estimated from overall match"
+                      : "Achievements and action verbs"}
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
