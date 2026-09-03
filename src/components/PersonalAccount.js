@@ -21,6 +21,8 @@ function PersonalAccount() {
   const [jobLeads, setJobLeads] = useState([]);
   const [jobLeadsLoading, setJobLeadsLoading] = useState(true);
   const [deletingLeadId, setDeletingLeadId] = useState(null);
+  const [leadToDelete, setLeadToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -157,25 +159,36 @@ function PersonalAccount() {
     navigate("/analyze-now");
   };
 
-  const handleDeleteLead = async (lead) => {
-    const leadTitle = getLeadTitle(lead);
-    const confirmed = window.confirm(
-      `Delete this job lead?\n\n${leadTitle}`
-    );
-    if (!confirmed) return;
+  const handleDeleteLead = (lead) => {
+    setDeleteError("");
+    setLeadToDelete(lead);
+  };
 
-    setDeletingLeadId(lead.id);
+  const handleCancelDeleteLead = () => {
+    if (deletingLeadId) return;
+    setLeadToDelete(null);
+    setDeleteError("");
+  };
+
+  const handleConfirmDeleteLead = async () => {
+    if (!leadToDelete || !user?.uid) return;
+
+    setDeletingLeadId(leadToDelete.id);
+    setDeleteError("");
     try {
-      const result = await deleteUserJobLead(user.uid, lead.id);
+      const result = await deleteUserJobLead(user.uid, leadToDelete.id);
       if (result.success) {
-        setJobLeads((prev) => prev.filter((item) => item.id !== lead.id));
+        setJobLeads((prev) =>
+          prev.filter((item) => item.id !== leadToDelete.id)
+        );
+        setLeadToDelete(null);
       } else {
         console.error("Error deleting job lead:", result.error);
-        alert("Could not delete this job lead. Please try again.");
+        setDeleteError("Could not delete this job lead. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting job lead:", error);
-      alert("Could not delete this job lead. Please try again.");
+      setDeleteError("Could not delete this job lead. Please try again.");
     } finally {
       setDeletingLeadId(null);
     }
@@ -679,6 +692,62 @@ function PersonalAccount() {
           </div>
         </div>
       </div>
+
+      {leadToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={handleCancelDeleteLead}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-xl shadow-2xl p-6"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-lead-title"
+          >
+            <h2
+              id="delete-lead-title"
+              className="text-xl font-semibold text-gray-900"
+            >
+              Delete this job lead?
+            </h2>
+            <p className="text-sm text-gray-500 mt-2">
+              This will permanently remove it from your saved leads.
+            </p>
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="font-semibold text-gray-900">
+                {getLeadTitle(leadToDelete)}
+              </p>
+              {getLeadCompany(leadToDelete) && (
+                <p className="text-sm font-medium text-indigo-600 mt-1">
+                  {getLeadCompany(leadToDelete)}
+                </p>
+              )}
+            </div>
+            {deleteError && (
+              <p className="text-sm text-red-600 mt-3">{deleteError}</p>
+            )}
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancelDeleteLead}
+                disabled={Boolean(deletingLeadId)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteLead}
+                disabled={Boolean(deletingLeadId)}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingLeadId ? "Deleting..." : "Delete lead"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
