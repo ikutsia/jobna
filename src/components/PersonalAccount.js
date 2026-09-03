@@ -6,6 +6,7 @@ import { auth } from "../firebase/config";
 import {
   getUserProfile,
   getUserJobLeads,
+  deleteUserJobLead,
   updateUserProfile,
 } from "../firebase/firestore";
 
@@ -19,6 +20,7 @@ function PersonalAccount() {
   const [updateMessage, setUpdateMessage] = useState("");
   const [jobLeads, setJobLeads] = useState([]);
   const [jobLeadsLoading, setJobLeadsLoading] = useState(true);
+  const [deletingLeadId, setDeletingLeadId] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -153,6 +155,30 @@ function PersonalAccount() {
     );
 
     navigate("/analyze-now");
+  };
+
+  const handleDeleteLead = async (lead) => {
+    const leadTitle = getLeadTitle(lead);
+    const confirmed = window.confirm(
+      `Delete this job lead?\n\n${leadTitle}`
+    );
+    if (!confirmed) return;
+
+    setDeletingLeadId(lead.id);
+    try {
+      const result = await deleteUserJobLead(user.uid, lead.id);
+      if (result.success) {
+        setJobLeads((prev) => prev.filter((item) => item.id !== lead.id));
+      } else {
+        console.error("Error deleting job lead:", result.error);
+        alert("Could not delete this job lead. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting job lead:", error);
+      alert("Could not delete this job lead. Please try again.");
+    } finally {
+      setDeletingLeadId(null);
+    }
   };
 
   if (loading) {
@@ -577,6 +603,15 @@ function PersonalAccount() {
                                 Open Source
                               </a>
                             )}
+                            <button
+                              onClick={() => handleDeleteLead(lead)}
+                              disabled={deletingLeadId === lead.id}
+                              className="border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {deletingLeadId === lead.id
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
                           </div>
                         </div>
                       </div>
