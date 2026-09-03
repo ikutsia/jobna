@@ -2,6 +2,44 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getRemainingCalls, getCostEstimate } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
+
+const EMPTY_ANALYSIS_RESULTS = {
+  matchScore: 0,
+  skillsMatch: [],
+  missingSkills: [],
+  recommendations: [],
+  assessment: "",
+  keywordAnalysis: {},
+  atsAnalysis: {
+    overallScore: 0,
+    grade: "F",
+    breakdown: {},
+    recommendations: [],
+  },
+};
+
+const mergeAnalysisResults = (payload) => {
+  if (!payload || typeof payload !== "object") {
+    return EMPTY_ANALYSIS_RESULTS;
+  }
+
+  return {
+    ...EMPTY_ANALYSIS_RESULTS,
+    ...payload,
+    skillsMatch: payload.skillsMatch || [],
+    missingSkills: payload.missingSkills || [],
+    recommendations: payload.recommendations || [],
+    keywordAnalysis: payload.keywordAnalysis || {},
+    atsAnalysis: {
+      ...EMPTY_ANALYSIS_RESULTS.atsAnalysis,
+      ...payload.atsAnalysis,
+      breakdown: payload.atsAnalysis?.breakdown || {},
+      recommendations:
+        payload.atsAnalysis?.recommendations || payload.recommendations || [],
+    },
+  };
+};
+
 // AI components removed - now using single AI analysis mode
 
 function AnalyzeNow() {
@@ -11,20 +49,9 @@ function AnalyzeNow() {
     analysisComplete: false,
   });
 
-  const [analysisResults, setAnalysisResults] = useState({
-    matchScore: 0,
-    skillsMatch: [],
-    missingSkills: [],
-    recommendations: [],
-    assessment: "",
-    keywordAnalysis: {},
-    atsAnalysis: {
-      overallScore: 0,
-      grade: "F",
-      breakdown: {},
-      recommendations: [],
-    },
-  });
+  const [analysisResults, setAnalysisResults] = useState(
+    EMPTY_ANALYSIS_RESULTS
+  );
 
   const [usageInfo, setUsageInfo] = useState({
     remainingCalls: 0,
@@ -114,7 +141,10 @@ function AnalyzeNow() {
       const data = await response.json();
       console.log("🔍 Analysis Response:", data);
       console.log("🤖 Model Used:", data.data?.modelUsed);
-      const results = data.data;
+      if (!data?.data) {
+        throw new Error("Analysis returned no data. Please try again.");
+      }
+      const results = mergeAnalysisResults(data.data);
 
       setAnalysisResults(results);
       setAnalysisData({
@@ -265,7 +295,7 @@ function AnalyzeNow() {
           </p>
         </div>
 
-        {!analysisData.analysisComplete ? (
+        {!analysisData?.analysisComplete ? (
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center space-y-8">
               {/* File Upload Status */}
@@ -335,7 +365,7 @@ function AnalyzeNow() {
               </div>
 
               {/* Error Display */}
-              {analysisData.error && (
+              {analysisData?.error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="flex items-center">
                     <svg
@@ -351,23 +381,23 @@ function AnalyzeNow() {
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <p className="text-sm text-red-800">{analysisData.error}</p>
+                    <p className="text-sm text-red-800">{analysisData?.error}</p>
                   </div>
                 </div>
               )}
 
               {/* Analysis Progress */}
-              {analysisData.isAnalyzing && (
+              {analysisData?.isAnalyzing && (
                 <div className="text-center">
                   <div className="mb-4">
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
                         className="bg-orange-600 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${analysisData.analysisProgress}%` }}
+                        style={{ width: `${analysisData?.analysisProgress || 0}%` }}
                       ></div>
                     </div>
                     <p className="text-sm text-gray-600 mt-2">
-                      Analyzing... {analysisData.analysisProgress}%
+                      Analyzing... {analysisData?.analysisProgress || 0}%
                     </p>
                   </div>
                 </div>
@@ -378,16 +408,20 @@ function AnalyzeNow() {
                 <button
                   onClick={handleAnalyze}
                   disabled={
-                    analysisData.isAnalyzing ||
+                    analysisData?.isAnalyzing ||
                     !localStorage.getItem("cvText") ||
                     !localStorage.getItem("jdText")
                   }
                   className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none text-lg"
                 >
-                  {analysisData.isAnalyzing ? "Analyzing..." : "Start Analysis"}
+                  {analysisData?.isAnalyzing ? "Analyzing..." : "Start Analysis"}
                 </button>
               </div>
             </div>
+          </div>
+        ) : !analysisResults ? (
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <p className="text-gray-600">Loading analysis...</p>
           </div>
         ) : (
           /* Analysis Results */
@@ -403,22 +437,22 @@ function AnalyzeNow() {
                 <div className="text-center">
                   <div
                     className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getScoreBgColor(
-                      analysisResults.matchScore
+                      analysisResults?.matchScore
                     )} mb-4`}
                   >
                     <span
                       className={`text-2xl font-bold ${getScoreColor(
-                        analysisResults.matchScore
+                        analysisResults?.matchScore
                       )}`}
                     >
-                      {analysisResults.matchScore}%
+                      {analysisResults?.matchScore}%
                     </span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     Match Score
                   </h3>
                   <p className="text-sm text-gray-600">
-                    CV matches {analysisResults.matchScore}% of job requirements
+                    CV matches {analysisResults?.matchScore}% of job requirements
                   </p>
                 </div>
 
@@ -426,15 +460,15 @@ function AnalyzeNow() {
                 <div className="text-center">
                   <div
                     className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getATSScoreBgColor(
-                      analysisResults.atsAnalysis.overallScore
+                      analysisResults?.atsAnalysis?.overallScore
                     )} mb-4`}
                   >
                     <span
                       className={`text-2xl font-bold ${getATSScoreColor(
-                        analysisResults.atsAnalysis.overallScore
+                        analysisResults?.atsAnalysis?.overallScore
                       )}`}
                     >
-                      {analysisResults.atsAnalysis.overallScore}%
+                      {analysisResults?.atsAnalysis?.overallScore || 0}%
                     </span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -443,7 +477,7 @@ function AnalyzeNow() {
                   <p className="text-sm text-gray-600">
                     Grade:{" "}
                     <span className="font-bold text-lg">
-                      {analysisResults.atsAnalysis.grade}
+                      {analysisResults?.atsAnalysis?.grade}
                     </span>
                   </p>
                 </div>
@@ -471,7 +505,7 @@ function AnalyzeNow() {
                   Matching Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {analysisResults.skillsMatch &&
+                  {analysisResults?.skillsMatch &&
                   analysisResults.skillsMatch.length > 0 ? (
                     analysisResults.skillsMatch.map((skill, index) => (
                       <span
@@ -508,7 +542,7 @@ function AnalyzeNow() {
                   Missing Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {analysisResults.missingSkills &&
+                  {analysisResults?.missingSkills &&
                   analysisResults.missingSkills.length > 0 ? (
                     analysisResults.missingSkills.map((skill, index) => (
                       <span
@@ -547,7 +581,7 @@ function AnalyzeNow() {
               </h3>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-gray-700">
-                  {analysisResults.assessment || "No assessment available yet."}
+                  {analysisResults?.assessment || "No assessment available yet."}
                 </p>
               </div>
             </div>
@@ -558,15 +592,15 @@ function AnalyzeNow() {
                 Keyword Analysis
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {analysisResults.keywordAnalysis &&
-                Object.keys(analysisResults.keywordAnalysis).length > 0 ? (
+                {analysisResults?.keywordAnalysis &&
+                Object.keys(analysisResults?.keywordAnalysis).length > 0 ? (
                   <>
                     {/* Score */}
                     <div className="border border-gray-200 rounded-lg p-4">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium text-gray-900">Score</span>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {analysisResults.keywordAnalysis.score || 0}%
+                          {analysisResults?.keywordAnalysis?.score || 0}%
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">Match percentage</p>
@@ -577,7 +611,7 @@ function AnalyzeNow() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium text-gray-900">Found</span>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {analysisResults.keywordAnalysis.found || 0}
+                          {analysisResults?.keywordAnalysis?.found || 0}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">Keywords matched</p>
@@ -588,7 +622,7 @@ function AnalyzeNow() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium text-gray-900">Total</span>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {analysisResults.keywordAnalysis.total || 0}
+                          {analysisResults?.keywordAnalysis?.total || 0}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
@@ -603,7 +637,7 @@ function AnalyzeNow() {
                           Matches
                         </span>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {analysisResults.keywordAnalysis.matches?.length || 0}
+                          {analysisResults?.keywordAnalysis?.matches?.length || 0}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">Matched keywords</p>
@@ -617,7 +651,7 @@ function AnalyzeNow() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        {analysisResults.keywordAnalysis.description ||
+                        {analysisResults?.keywordAnalysis?.description ||
                           "No description available"}
                       </p>
                     </div>
@@ -658,34 +692,34 @@ function AnalyzeNow() {
                     </span>
                     <span
                       className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults.atsAnalysis.breakdown.keywordMatch
+                        analysisResults?.atsAnalysis?.breakdown?.keywordMatch
                           ?.score || 0
                       )}`}
                     >
-                      {analysisResults.atsAnalysis.breakdown.keywordMatch
+                      {analysisResults?.atsAnalysis?.breakdown?.keywordMatch
                         ?.score || 0}
                       %
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    {analysisResults.atsAnalysis.breakdown.keywordMatch
+                    {analysisResults?.atsAnalysis?.breakdown?.keywordMatch
                       ?.matched || 0}{" "}
                     of{" "}
-                    {analysisResults.atsAnalysis.breakdown.keywordMatch
+                    {analysisResults?.atsAnalysis?.breakdown?.keywordMatch
                       ?.total || 0}{" "}
                     keywords found
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults.atsAnalysis.breakdown.keywordMatch
+                        analysisResults?.atsAnalysis?.breakdown?.keywordMatch
                           ?.score || 0
                       )
                         .replace("bg-", "bg-")
                         .replace("-100", "-500")}`}
                       style={{
                         width: `${
-                          analysisResults.atsAnalysis.breakdown.keywordMatch
+                          analysisResults?.atsAnalysis?.breakdown?.keywordMatch
                             ?.score || 0
                         }%`,
                       }}
@@ -701,34 +735,34 @@ function AnalyzeNow() {
                     </span>
                     <span
                       className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults.atsAnalysis.breakdown.experienceMatch
+                        analysisResults?.atsAnalysis?.breakdown?.experienceMatch
                           ?.score || 0
                       )}`}
                     >
-                      {analysisResults.atsAnalysis.breakdown.experienceMatch
+                      {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
                         ?.score || 0}
                       %
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    {analysisResults.atsAnalysis.breakdown.experienceMatch
+                    {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
                       ?.candidate || 0}{" "}
                     years vs{" "}
-                    {analysisResults.atsAnalysis.breakdown.experienceMatch
+                    {analysisResults?.atsAnalysis?.breakdown?.experienceMatch
                       ?.required || 0}{" "}
                     required
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults.atsAnalysis.breakdown.experienceMatch
+                        analysisResults?.atsAnalysis?.breakdown?.experienceMatch
                           ?.score || 0
                       )
                         .replace("bg-", "bg-")
                         .replace("-100", "-500")}`}
                       style={{
                         width: `${
-                          analysisResults.atsAnalysis.breakdown.experienceMatch
+                          analysisResults?.atsAnalysis?.breakdown?.experienceMatch
                             ?.score || 0
                         }%`,
                       }}
@@ -742,11 +776,11 @@ function AnalyzeNow() {
                     <span className="font-medium text-gray-900">Education</span>
                     <span
                       className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults.atsAnalysis.breakdown.educationMatch
+                        analysisResults?.atsAnalysis?.breakdown?.educationMatch
                           ?.score || 0
                       )}`}
                     >
-                      {analysisResults.atsAnalysis.breakdown.educationMatch
+                      {analysisResults?.atsAnalysis?.breakdown?.educationMatch
                         ?.score || 0}
                       %
                     </span>
@@ -757,14 +791,14 @@ function AnalyzeNow() {
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults.atsAnalysis.breakdown.educationMatch
+                        analysisResults?.atsAnalysis?.breakdown?.educationMatch
                           ?.score || 0
                       )
                         .replace("bg-", "bg-")
                         .replace("-100", "-500")}`}
                       style={{
                         width: `${
-                          analysisResults.atsAnalysis.breakdown.educationMatch
+                          analysisResults?.atsAnalysis?.breakdown?.educationMatch
                             ?.score || 0
                         }%`,
                       }}
@@ -778,10 +812,10 @@ function AnalyzeNow() {
                     <span className="font-medium text-gray-900">Format</span>
                     <span
                       className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults.atsAnalysis.breakdown.format?.score || 0
+                        analysisResults?.atsAnalysis?.breakdown?.format?.score || 0
                       )}`}
                     >
-                      {analysisResults.atsAnalysis.breakdown.format?.score || 0}
+                      {analysisResults?.atsAnalysis?.breakdown?.format?.score || 0}
                       %
                     </span>
                   </div>
@@ -791,13 +825,13 @@ function AnalyzeNow() {
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults.atsAnalysis.breakdown.format?.score || 0
+                        analysisResults?.atsAnalysis?.breakdown?.format?.score || 0
                       )
                         .replace("bg-", "bg-")
                         .replace("-100", "-500")}`}
                       style={{
                         width: `${
-                          analysisResults.atsAnalysis.breakdown.format?.score ||
+                          analysisResults?.atsAnalysis?.breakdown?.format?.score ||
                           0
                         }%`,
                       }}
@@ -813,11 +847,11 @@ function AnalyzeNow() {
                     </span>
                     <span
                       className={`text-lg font-bold ${getATSScoreColor(
-                        analysisResults.atsAnalysis.breakdown.contentQuality
+                        analysisResults?.atsAnalysis?.breakdown?.contentQuality
                           ?.score || 0
                       )}`}
                     >
-                      {analysisResults.atsAnalysis.breakdown.contentQuality
+                      {analysisResults?.atsAnalysis?.breakdown?.contentQuality
                         ?.score || 0}
                       %
                     </span>
@@ -828,14 +862,14 @@ function AnalyzeNow() {
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${getATSScoreBgColor(
-                        analysisResults.atsAnalysis.breakdown.contentQuality
+                        analysisResults?.atsAnalysis?.breakdown?.contentQuality
                           ?.score || 0
                       )
                         .replace("bg-", "bg-")
                         .replace("-100", "-500")}`}
                       style={{
                         width: `${
-                          analysisResults.atsAnalysis.breakdown.contentQuality
+                          analysisResults?.atsAnalysis?.breakdown?.contentQuality
                             ?.score || 0
                         }%`,
                       }}
@@ -845,14 +879,14 @@ function AnalyzeNow() {
               </div>
 
               {/* ATS Recommendations */}
-              {analysisResults.atsAnalysis.recommendations &&
-                analysisResults.atsAnalysis.recommendations.length > 0 && (
+              {analysisResults?.atsAnalysis?.recommendations &&
+                analysisResults?.atsAnalysis?.recommendations.length > 0 && (
                   <div className="mt-6">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4">
                       ATS Optimization Recommendations
                     </h4>
                     <div className="space-y-3">
-                      {analysisResults.atsAnalysis.recommendations.map(
+                      {analysisResults?.atsAnalysis?.recommendations.map(
                         (rec, index) => (
                           <div
                             key={index}
@@ -959,20 +993,7 @@ function AnalyzeNow() {
                     analysisProgress: 0,
                     analysisComplete: false,
                   });
-                  setAnalysisResults({
-                    matchScore: 0,
-                    skillsMatch: [],
-                    missingSkills: [],
-                    recommendations: [],
-                    assessment: "",
-                    keywordAnalysis: {},
-                    atsAnalysis: {
-                      overallScore: 0,
-                      grade: "F",
-                      breakdown: {},
-                      recommendations: [],
-                    },
-                  });
+                  setAnalysisResults(EMPTY_ANALYSIS_RESULTS);
                 }}
                 className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
