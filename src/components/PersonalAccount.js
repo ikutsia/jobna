@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { logoutUser } from "../firebase/auth";
@@ -9,6 +9,42 @@ import {
   deleteUserJobLead,
   updateUserProfile,
 } from "../firebase/firestore";
+
+function LeadDescriptionPreview({ text }) {
+  const description = text || "No description available.";
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+  const textRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (expanded) return;
+    const element = textRef.current;
+    if (!element) return;
+    setCanExpand(element.scrollHeight > element.clientHeight + 2);
+  }, [description, expanded]);
+
+  return (
+    <div className="mt-3">
+      <p
+        ref={textRef}
+        className={`text-gray-700 whitespace-pre-line ${
+          expanded ? "" : "line-clamp-4"
+        }`}
+      >
+        {description}
+      </p>
+      {canExpand && (
+        <button
+          type="button"
+          onClick={() => setExpanded((open) => !open)}
+          className="mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function PersonalAccount() {
   const navigate = useNavigate();
@@ -594,9 +630,7 @@ function PersonalAccount() {
                             <p className="text-xs text-gray-500 mt-2">
                               Saved on {formatLeadDate(lead.createdAt)}
                             </p>
-                            <p className="text-gray-700 mt-3 line-clamp-4 whitespace-pre-line">
-                              {leadDescription || "No description available."}
-                            </p>
+                            <LeadDescriptionPreview text={leadDescription} />
                           </div>
 
                           <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:min-w-[180px]">
