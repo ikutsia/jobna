@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { getRemainingCalls, getCostEstimate } from "../firebase/openai";
 import { getCurrentUser } from "../firebase/auth";
 
 const EMPTY_ANALYSIS_RESULTS = {
@@ -184,42 +183,6 @@ function AnalyzeNow() {
     EMPTY_ANALYSIS_RESULTS
   );
 
-  const [usageInfo, setUsageInfo] = useState({
-    remainingCalls: 0,
-    isLoading: true,
-  });
-
-  const [costInfo, setCostInfo] = useState({
-    tokensUsed: 0,
-    cost: "0.0000",
-    remaining: "5.0000",
-    isLoading: true,
-  });
-
-  // AI mode state removed - now using single AI analysis mode
-
-  // Check user's remaining API calls and cost
-  const checkUsage = async () => {
-    try {
-      const user = getCurrentUser();
-      if (user) {
-        const remaining = await getRemainingCalls(user.uid);
-        const cost = await getCostEstimate(user.uid);
-        setUsageInfo({ remainingCalls: remaining, isLoading: false });
-        setCostInfo({ ...cost, isLoading: false });
-      }
-    } catch (error) {
-      console.error("Error checking usage:", error);
-      setUsageInfo({ remainingCalls: 0, isLoading: false });
-      setCostInfo({
-        tokensUsed: 0,
-        cost: "0.0000",
-        remaining: "5.0000",
-        isLoading: false,
-      });
-    }
-  };
-
   // Real analysis with OpenAI
   const handleAnalyze = async () => {
     try {
@@ -233,13 +196,6 @@ function AnalyzeNow() {
       if (!user) {
         throw new Error("Please log in to analyze your CV and job description");
       }
-
-      // Skip usage limits check for local testing with Gemini
-      // if (usageInfo.remainingCalls <= 0) {
-      //   throw new Error(
-      //     "Monthly API call limit reached. Please upgrade or wait until next month."
-      //   );
-      // }
 
       // Get actual uploaded files from localStorage
       const cvText = localStorage.getItem("cvText");
@@ -291,9 +247,6 @@ function AnalyzeNow() {
         analysisProgress: 100,
         error: null,
       });
-
-      // Update usage info
-      await checkUsage();
     } catch (error) {
       console.error("Analysis error:", error);
 
@@ -332,11 +285,6 @@ function AnalyzeNow() {
       });
     }
   };
-
-  // Load usage info on component mount
-  useEffect(() => {
-    checkUsage();
-  }, []);
 
   const getScoreColor = (score) => {
     if (score >= 90) return "text-green-600";
@@ -392,39 +340,6 @@ function AnalyzeNow() {
             </svg>
             Back to Home
           </Link>
-        </div>
-
-        {/* Usage Information */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-blue-800">
-                API Calls Remaining
-              </h3>
-              <p className="text-lg font-bold text-blue-600">
-                {usageInfo.isLoading ? "..." : usageInfo.remainingCalls}
-              </p>
-              <p className="text-xs text-blue-600">Free tier: 50/month</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-blue-800">
-                Cost This Month
-              </h3>
-              <p className="text-lg font-bold text-blue-600">
-                ${costInfo.isLoading ? "..." : costInfo.cost}
-              </p>
-              <p className="text-xs text-blue-600">Budget: $5.00</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-blue-800">
-                Remaining Budget
-              </h3>
-              <p className="text-lg font-bold text-blue-600">
-                ${costInfo.isLoading ? "..." : costInfo.remaining}
-              </p>
-              <p className="text-xs text-blue-600">Free tier limit</p>
-            </div>
-          </div>
         </div>
 
         {/* Header */}

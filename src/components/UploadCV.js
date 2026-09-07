@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getRemainingCalls } from "../firebase/openai";
 import { extractTextFromFile, validateFile } from "../utils/textExtractor";
 import { useAuth } from "../hooks/useAuth";
 
@@ -13,11 +12,6 @@ function UploadCV() {
     fileSize: "",
     isUploading: false,
     uploadProgress: 0,
-  });
-
-  const [usageInfo, setUsageInfo] = useState({
-    remainingCalls: 0,
-    isLoading: true,
   });
 
   const [errors, setErrors] = useState({});
@@ -134,26 +128,6 @@ function UploadCV() {
     localStorage.removeItem("cvText");
     localStorage.removeItem("uploadedCV");
   };
-
-  // Check user's remaining API calls
-  const checkUsage = useCallback(async () => {
-    try {
-      if (user) {
-        const remaining = await getRemainingCalls(user.uid);
-        setUsageInfo({ remainingCalls: remaining, isLoading: false });
-      }
-    } catch (error) {
-      console.error("Error checking usage:", error);
-      setUsageInfo({ remainingCalls: 0, isLoading: false });
-    }
-  }, [user]);
-
-  // Load usage info on component mount
-  useEffect(() => {
-    if (user) {
-      checkUsage();
-    }
-  }, [user, checkUsage]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -447,30 +421,6 @@ function UploadCV() {
                 </div>
               )}
             </div>
-
-            {/* Usage Information - Only show for authenticated users */}
-            {user && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-blue-800">
-                      API Usage This Month
-                    </h3>
-                    <p className="text-sm text-blue-600">
-                      {usageInfo.isLoading
-                        ? "Loading..."
-                        : `${usageInfo.remainingCalls} analyses remaining`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-blue-600">Free Tier Limit</p>
-                    <p className="text-sm font-medium text-blue-800">
-                      50 calls/month
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Submit Button */}
             <div className="flex justify-center">
