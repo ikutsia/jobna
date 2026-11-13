@@ -717,9 +717,17 @@ function PersonalAccount() {
                 Account Actions
               </h3>
               <div className="space-y-3">
+                <a
+                  href="https://chromewebstore.google.com/detail/jobna/ogdciaclgeoomemcfmfhjdonkmmhhaei"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-center"
+                >
+                  Get Chrome Extension
+                </a>
                 <p className="text-gray-500 text-sm">
-                  Additional account actions will be available here in the
-                  future.
+                  Install Jobna on Chrome to save LinkedIn job leads to this
+                  account.
                 </p>
               </div>
             </div>

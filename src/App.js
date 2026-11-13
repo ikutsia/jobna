@@ -222,6 +222,14 @@ function HomePage() {
             >
               Browse Jobs
             </Link>
+            <a
+              href="https://chromewebstore.google.com/detail/jobna/ogdciaclgeoomemcfmfhjdonkmmhhaei"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-sm md:text-base text-center"
+            >
+              Get Chrome Extension
+            </a>
           </div>
 
           {/* Subtitle - moved below buttons */}
