@@ -75,4 +75,4 @@ If you want to test before deploying:
    FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
    ```
 3. Run: `netlify dev`
-4. Test functions at `http://localhost:8888/.netlify/functions/sync-job-feeds`
+4. Test functions at `http://localhost:8888/.netlify/functions/analyze-match`

@@ -22,11 +22,9 @@ The functions will use this to connect to Firestore.
 
 - This method works for reading and may work for writing depending on your Firestore rules
 - If you encounter write permission errors later, then you'll need the Service Account Key
-- For now, this is enough to test the job feed functionality
+- For now, this is enough to connect Netlify functions to Firestore
 
 ## After Adding:
 
 1. Redeploy your site (or wait for auto-deploy)
-2. Visit `/job-feed` page
-3. Click "Sync Jobs" button
-4. Check Netlify function logs if there are any errors
+2. Check Netlify function logs if there are any errors

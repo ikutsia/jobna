@@ -55,7 +55,7 @@
   status = 200
 
 [[redirects]]
-  from = "/job-feed"
+  from = "/browse-jobs"
   to = "/index.html"
   status = 200
 

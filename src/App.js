@@ -9,7 +9,7 @@ import AnalyzeNow from "./components/AnalyzeNow";
 import TermsOfService from "./components/TermsOfService";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import PersonalAccount from "./components/PersonalAccount";
-import JobFeed from "./components/JobFeed";
+import BrowseJobs from "./components/BrowseJobs";
 
 function HomePage() {
   const { user, loading, handleLogout } = useAuth();
@@ -217,7 +217,7 @@ function HomePage() {
               Analyze now!
             </Link>
             <Link
-              to="/job-feed"
+              to="/browse-jobs"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-sm md:text-base"
             >
               Browse Jobs
@@ -357,7 +357,7 @@ function App() {
           element={<UploadJobDescription />}
         />
         <Route path="/analyze-now" element={<AnalyzeNow />} />
-        <Route path="/job-feed" element={<JobFeed />} />
+        <Route path="/browse-jobs" element={<BrowseJobs />} />
       </Routes>
     </Router>
   );

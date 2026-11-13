@@ -569,7 +569,7 @@ function PersonalAccount() {
                 Analyze Now
               </button>
               <button
-                onClick={() => navigate("/job-feed")}
+                onClick={() => navigate("/browse-jobs")}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Browse Jobs
