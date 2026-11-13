@@ -286,7 +286,7 @@ function PersonalAccount() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column - Profile Info */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">
                   Profile Information
@@ -506,7 +506,7 @@ function PersonalAccount() {
           {/* Center Column - AI Dashboard and Quick Actions */}
           <div className="lg:col-span-6 flex flex-col space-y-6">
             {/* AI Dashboard */}
-            <div className="bg-black rounded-lg shadow-lg p-6">
+            <div className="bg-black rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Your AI Dashboard
               </h3>
@@ -668,7 +668,7 @@ function PersonalAccount() {
 
           {/* Right Column - Account Status and Account Actions Sidebar */}
           <div className="lg:col-span-3 space-y-6">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Account Status
               </h3>
@@ -709,7 +709,7 @@ function PersonalAccount() {
             </div>
 
             {/* Account Actions */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Account Actions
               </h3>
