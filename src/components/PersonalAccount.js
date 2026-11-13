@@ -507,12 +507,9 @@ function PersonalAccount() {
           <div className="lg:col-span-6 flex flex-col space-y-6">
             {/* AI Dashboard */}
             <div className="bg-black rounded-lg shadow-lg p-6">
-              <div className="flex items-center justify-start gap-2 mb-4">
-                <h3 className="text-xl font-semibold text-white">
-                  Your AI Dashboard
-                </h3>
-                <p className="text-red-400 text-sm ml-1">Coming soon!</p>
-              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Your AI Dashboard
+              </h3>
               <div className="border-b border-gray-600 mb-6"></div>
               <div className="grid grid-cols-5 gap-0">
                 <div className="text-center border-r border-gray-600 pr-4">
