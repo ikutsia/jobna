@@ -506,7 +506,7 @@ function PersonalAccount() {
           {/* Center Column - AI Dashboard and Quick Actions */}
           <div className="lg:col-span-6 flex flex-col space-y-6">
             {/* AI Dashboard */}
-            <div className="bg-black rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div className="bg-black rounded-lg shadow-lg p-6 transition-transform hover:scale-[1.02]">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Your AI Dashboard
               </h3>
