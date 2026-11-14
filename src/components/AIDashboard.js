@@ -336,7 +336,7 @@ function AIDashboard() {
                     setDraggingLeadId(null);
                     setDropFolderId(null);
                   }}
-                  className={`group/card relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-14 cursor-grab hover:shadow-md transition-shadow ${
+                  className={`group/card relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-20 cursor-grab hover:shadow-md transition-shadow ${
                     draggingLeadId === lead.id ? "opacity-60" : ""
                   }`}
                 >
@@ -381,27 +381,27 @@ function AIDashboard() {
                       </span>
                     </button>
                   )}
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-                    <div className="min-w-0 flex-1 flex flex-col lg:flex-row lg:items-center lg:gap-3">
-                      <h3 className="text-base font-semibold text-gray-900 lg:truncate">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900">
                         {getLeadTitle(lead)}
                       </h3>
                       {getLeadCompany(lead) && (
-                        <p className="text-sm font-medium text-indigo-600 lg:truncate">
+                        <p className="text-sm font-medium text-indigo-600 mt-1">
                           {getLeadCompany(lead)}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500 whitespace-nowrap">
+                      <p className="text-xs text-gray-500 mt-2">
                         Saved on {formatLeadDate(lead.createdAt)}
                       </p>
                     </div>
 
-                    <div className="flex flex-row flex-wrap lg:flex-nowrap items-center gap-2 shrink-0">
+                    <div className="flex flex-col gap-2 w-full sm:w-auto lg:min-w-[140px] lg:mr-4">
                       <button
                         type="button"
                         onMouseDown={(event) => event.stopPropagation()}
                         onClick={() => handleAnalyzeLead(lead)}
-                        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-1.5 px-3 rounded-lg transition-colors text-sm whitespace-nowrap"
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors text-xs"
                       >
                         Analyze This Lead
                       </button>
@@ -411,7 +411,7 @@ function AIDashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onMouseDown={(event) => event.stopPropagation()}
-                          className="border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold py-1.5 px-3 rounded-lg transition-colors text-center text-sm whitespace-nowrap"
+                          className="border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold py-1 px-3 rounded-lg transition-colors text-center text-xs"
                         >
                           Open Source
                         </a>
@@ -421,7 +421,7 @@ function AIDashboard() {
                         onMouseDown={(event) => event.stopPropagation()}
                         onClick={() => handleDeleteLead(lead)}
                         disabled={deletingLeadId === lead.id}
-                        className="border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-1.5 px-3 rounded-lg transition-colors text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-1 px-3 rounded-lg transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {deletingLeadId === lead.id ? "Deleting..." : "Delete"}
                       </button>
