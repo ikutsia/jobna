@@ -378,27 +378,27 @@ function AIDashboard() {
                       </span>
                     </button>
                   )}
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+                    <div className="min-w-0 flex-1 flex flex-col lg:flex-row lg:items-center lg:gap-3">
+                      <h3 className="text-base font-semibold text-gray-900 lg:truncate">
                         {getLeadTitle(lead)}
                       </h3>
                       {getLeadCompany(lead) && (
-                        <p className="text-sm font-medium text-indigo-600 mt-1">
+                        <p className="text-sm font-medium text-indigo-600 lg:truncate">
                           {getLeadCompany(lead)}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-gray-500 whitespace-nowrap">
                         Saved on {formatLeadDate(lead.createdAt)}
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:min-w-[180px]">
+                    <div className="flex flex-row flex-wrap lg:flex-nowrap items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onMouseDown={(event) => event.stopPropagation()}
                         onClick={() => handleAnalyzeLead(lead)}
-                        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-1.5 px-3 rounded-lg transition-colors text-sm whitespace-nowrap"
                       >
                         Analyze This Lead
                       </button>
@@ -408,7 +408,7 @@ function AIDashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onMouseDown={(event) => event.stopPropagation()}
-                          className="border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold py-2 px-4 rounded-lg transition-colors text-center"
+                          className="border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold py-1.5 px-3 rounded-lg transition-colors text-center text-sm whitespace-nowrap"
                         >
                           Open Source
                         </a>
@@ -418,7 +418,7 @@ function AIDashboard() {
                         onMouseDown={(event) => event.stopPropagation()}
                         onClick={() => handleDeleteLead(lead)}
                         disabled={deletingLeadId === lead.id}
-                        className="border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-1.5 px-3 rounded-lg transition-colors text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {deletingLeadId === lead.id ? "Deleting..." : "Delete"}
                       </button>
