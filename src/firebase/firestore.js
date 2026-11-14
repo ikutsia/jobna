@@ -190,6 +190,49 @@ export const deleteUserJobLead = async (uid, leadId) => {
   }
 };
 
+const JOB_LEAD_FOLDER_IDS = [
+  "job-leads",
+  "applied",
+  "post-comm",
+  "not-a-match",
+  "next-stage",
+];
+
+export const updateUserJobLeadFolder = async (uid, leadId, folder) => {
+  try {
+    if (!uid || !leadId) {
+      return { success: false, error: "Missing user or lead id" };
+    }
+
+    if (!JOB_LEAD_FOLDER_IDS.includes(folder)) {
+      return { success: false, error: "Invalid folder" };
+    }
+
+    const leadRef = doc(db, "job_leads", leadId);
+    const leadSnap = await getDoc(leadRef);
+
+    if (!leadSnap.exists()) {
+      return { success: false, error: "Job lead not found" };
+    }
+
+    if (leadSnap.data().userId !== uid) {
+      return {
+        success: false,
+        error: "You can only update your own job leads",
+      };
+    }
+
+    await updateDoc(leadRef, {
+      folder,
+      folderUpdatedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Update job lead folder error:", error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Resume Analysis Operations (for future use)
 export const saveResumeAnalysis = async (uid, analysisData) => {
   try {

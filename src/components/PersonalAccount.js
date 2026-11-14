@@ -9,6 +9,7 @@ import {
   deleteUserJobLead,
   updateUserProfile,
 } from "../firebase/firestore";
+import { countLeadsInFolder } from "../utils/jobLeadFolders";
 
 function LeadDescriptionPreview({ text }) {
   const description = text || "No description available.";
@@ -507,40 +508,54 @@ function PersonalAccount() {
           <div className="lg:col-span-6 flex flex-col space-y-6">
             {/* AI Dashboard */}
             <div className="bg-black rounded-lg shadow-lg p-6 transition-transform hover:scale-[1.02]">
-              <h3 className="text-xl font-semibold text-white mb-4">
+              <button
+                type="button"
+                onClick={() => navigate("/ai-dashboard")}
+                className="text-xl font-semibold text-white mb-4 hover:underline text-left"
+              >
                 Your AI Dashboard
-              </h3>
+              </button>
               <div className="border-b border-gray-600 mb-6"></div>
               <div className="grid grid-cols-5 gap-0">
                 <div className="text-center border-r border-gray-600 pr-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Job leads
                   </div>
-                  <div className="text-gray-300 text-xs">{jobLeads.length}</div>
+                  <div className="text-gray-300 text-xs">
+                    {countLeadsInFolder(jobLeads, "job-leads")}
+                  </div>
                 </div>
                 <div className="text-center border-r border-gray-600 px-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Applied
                   </div>
-                  <div className="text-gray-300 text-xs">0</div>
+                  <div className="text-gray-300 text-xs">
+                    {countLeadsInFolder(jobLeads, "applied")}
+                  </div>
                 </div>
                 <div className="text-center border-r border-gray-600 px-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Post Comm
                   </div>
-                  <div className="text-gray-300 text-xs">0</div>
+                  <div className="text-gray-300 text-xs">
+                    {countLeadsInFolder(jobLeads, "post-comm")}
+                  </div>
                 </div>
                 <div className="text-center border-r border-gray-600 px-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Not a match
                   </div>
-                  <div className="text-gray-300 text-xs">0</div>
+                  <div className="text-gray-300 text-xs">
+                    {countLeadsInFolder(jobLeads, "not-a-match")}
+                  </div>
                 </div>
                 <div className="text-center pl-4">
                   <div className="text-white font-medium text-sm mb-2">
                     Next stage
                   </div>
-                  <div className="text-gray-300 text-xs">0</div>
+                  <div className="text-gray-300 text-xs">
+                    {countLeadsInFolder(jobLeads, "next-stage")}
+                  </div>
                 </div>
               </div>
             </div>

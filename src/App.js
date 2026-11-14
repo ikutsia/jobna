@@ -10,6 +10,7 @@ import TermsOfService from "./components/TermsOfService";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import PersonalAccount from "./components/PersonalAccount";
 import BrowseJobs from "./components/BrowseJobs";
+import AIDashboard from "./components/AIDashboard";
 
 function HomePage() {
   const { user, loading, handleLogout } = useAuth();
@@ -358,6 +359,7 @@ function App() {
         />
         <Route path="/analyze-now" element={<AnalyzeNow />} />
         <Route path="/browse-jobs" element={<BrowseJobs />} />
+        <Route path="/ai-dashboard" element={<AIDashboard />} />
       </Routes>
     </Router>
   );
