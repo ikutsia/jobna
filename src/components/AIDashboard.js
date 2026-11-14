@@ -254,15 +254,15 @@ function AIDashboard() {
                     setDraggingLeadId(null);
                     setDropFolderId(null);
                   }}
-                  className={`relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-12 cursor-grab hover:shadow-md transition-shadow ${
+                  className={`relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-14 cursor-grab hover:shadow-md transition-shadow ${
                     draggingLeadId === lead.id ? "opacity-60" : ""
                   }`}
                 >
                   {nextFolderId && (
                     <button
                       type="button"
-                      title="Move to next stage"
-                      aria-label="Move to next stage"
+                      title="Move this lead to next folder"
+                      aria-label="Move this lead to next folder"
                       onMouseDown={(event) => event.stopPropagation()}
                       onClick={(event) => {
                         event.preventDefault();
@@ -272,21 +272,27 @@ function AIDashboard() {
                       className="group absolute top-3 right-3 text-indigo-600 hover:text-indigo-800"
                     >
                       <svg
-                        className="w-6 h-6"
+                        className="w-8 h-5"
                         fill="none"
                         stroke="currentColor"
-                        viewBox="0 0 24 24"
+                        viewBox="0 0 32 20"
                         aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 5l7 7-7 7"
+                          d="M2 10h22"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M18 4l8 6-8 6"
                         />
                       </svg>
                       <span className="pointer-events-none absolute right-0 top-full mt-1 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100">
-                        Move to next stage
+                        Move this lead to next folder
                       </span>
                     </button>
                   )}
