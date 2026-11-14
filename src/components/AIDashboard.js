@@ -5,6 +5,7 @@ import { auth } from "../firebase/config";
 import {
   getUserJobLeads,
   updateUserJobLeadFolder,
+  deleteUserJobLead,
 } from "../firebase/firestore";
 import {
   JOB_LEAD_FOLDERS,
@@ -19,6 +20,16 @@ function getLeadTitle(lead) {
 
 function getLeadCompany(lead) {
   return lead.company || lead.companyName || lead.organization || "";
+}
+
+function getLeadDescription(lead) {
+  return (
+    lead.description ||
+    lead.jobDescription ||
+    lead.fullDescription ||
+    lead.summary ||
+    ""
+  );
 }
 
 function formatLeadDate(value) {
@@ -41,6 +52,9 @@ function AIDashboard() {
   const [draggingLeadId, setDraggingLeadId] = useState(null);
   const [dropFolderId, setDropFolderId] = useState(null);
   const [moveError, setMoveError] = useState("");
+  const [deletingLeadId, setDeletingLeadId] = useState(null);
+  const [leadToDelete, setLeadToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -101,6 +115,70 @@ function AIDashboard() {
         )
       );
       setMoveError("Could not move this job lead. Please try again.");
+    }
+  };
+
+  const handleAnalyzeLead = (lead) => {
+    const leadTitle = getLeadTitle(lead);
+    const leadCompany = getLeadCompany(lead);
+    const leadLocation = lead.location || lead.city || "";
+    const leadDescription = getLeadDescription(lead);
+
+    const jdText = [
+      leadTitle && `Job Title: ${leadTitle}`,
+      leadCompany && `Company: ${leadCompany}`,
+      leadLocation && `Location: ${leadLocation}`,
+      leadDescription && `Description:\n${leadDescription}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    localStorage.setItem("jdText", jdText);
+    localStorage.setItem(
+      "uploadedJD",
+      JSON.stringify({
+        fileName: `${leadTitle}.txt`,
+        fileType: "Captured Job Lead",
+        uploadedAt: new Date().toISOString(),
+        source: lead.sourceUrl || lead.url || "Saved job lead",
+      })
+    );
+
+    navigate("/analyze-now");
+  };
+
+  const handleDeleteLead = (lead) => {
+    setDeleteError("");
+    setLeadToDelete(lead);
+  };
+
+  const handleCancelDeleteLead = () => {
+    if (deletingLeadId) return;
+    setLeadToDelete(null);
+    setDeleteError("");
+  };
+
+  const handleConfirmDeleteLead = async () => {
+    if (!leadToDelete || !user?.uid) return;
+
+    setDeletingLeadId(leadToDelete.id);
+    setDeleteError("");
+    try {
+      const result = await deleteUserJobLead(user.uid, leadToDelete.id);
+      if (result.success) {
+        setJobLeads((prev) =>
+          prev.filter((item) => item.id !== leadToDelete.id)
+        );
+        setLeadToDelete(null);
+      } else {
+        console.error("Error deleting job lead:", result.error);
+        setDeleteError("Could not delete this job lead. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting job lead:", error);
+      setDeleteError("Could not delete this job lead. Please try again.");
+    } finally {
+      setDeletingLeadId(null);
     }
   };
 
@@ -245,6 +323,10 @@ function AIDashboard() {
                   key={lead.id}
                   draggable
                   onDragStart={(event) => {
+                    if (event.target.closest("button, a")) {
+                      event.preventDefault();
+                      return;
+                    }
                     event.dataTransfer.setData("text/plain", lead.id);
                     event.dataTransfer.effectAllowed = "move";
                     setDraggingLeadId(lead.id);
@@ -296,17 +378,52 @@ function AIDashboard() {
                       </span>
                     </button>
                   )}
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {getLeadTitle(lead)}
-                  </h3>
-                  {getLeadCompany(lead) && (
-                    <p className="text-sm font-medium text-indigo-600 mt-1">
-                      {getLeadCompany(lead)}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    Saved on {formatLeadDate(lead.createdAt)}
-                  </p>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {getLeadTitle(lead)}
+                      </h3>
+                      {getLeadCompany(lead) && (
+                        <p className="text-sm font-medium text-indigo-600 mt-1">
+                          {getLeadCompany(lead)}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        Saved on {formatLeadDate(lead.createdAt)}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:min-w-[180px]">
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={() => handleAnalyzeLead(lead)}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Analyze This Lead
+                      </button>
+                      {(lead.sourceUrl || lead.url) && (
+                        <a
+                          href={lead.sourceUrl || lead.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onMouseDown={(event) => event.stopPropagation()}
+                          className="border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold py-2 px-4 rounded-lg transition-colors text-center"
+                        >
+                          Open Source
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={() => handleDeleteLead(lead)}
+                        disabled={deletingLeadId === lead.id}
+                        className="border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deletingLeadId === lead.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 );
               })}
@@ -314,6 +431,62 @@ function AIDashboard() {
           )}
         </div>
       </div>
+
+      {leadToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={handleCancelDeleteLead}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-xl shadow-2xl p-6"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-lead-title"
+          >
+            <h2
+              id="delete-lead-title"
+              className="text-xl font-semibold text-gray-900"
+            >
+              Delete this job lead?
+            </h2>
+            <p className="text-sm text-gray-500 mt-2">
+              This will permanently remove it from your saved leads.
+            </p>
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="font-semibold text-gray-900">
+                {getLeadTitle(leadToDelete)}
+              </p>
+              {getLeadCompany(leadToDelete) && (
+                <p className="text-sm font-medium text-indigo-600 mt-1">
+                  {getLeadCompany(leadToDelete)}
+                </p>
+              )}
+            </div>
+            {deleteError && (
+              <p className="text-sm text-red-600 mt-3">{deleteError}</p>
+            )}
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancelDeleteLead}
+                disabled={Boolean(deletingLeadId)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteLead}
+                disabled={Boolean(deletingLeadId)}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingLeadId ? "Deleting..." : "Delete lead"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
