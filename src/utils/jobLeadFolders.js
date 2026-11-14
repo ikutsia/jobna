@@ -18,3 +18,11 @@ export const getLeadFolder = (lead) => {
 
 export const countLeadsInFolder = (leads, folderId) =>
   (leads || []).filter((lead) => getLeadFolder(lead) === folderId).length;
+
+export const getNextFolderId = (folderId) => {
+  const index = JOB_LEAD_FOLDERS.findIndex((folder) => folder.id === folderId);
+  if (index === -1 || index >= JOB_LEAD_FOLDERS.length - 1) {
+    return null;
+  }
+  return JOB_LEAD_FOLDERS[index + 1].id;
+};

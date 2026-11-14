@@ -10,6 +10,7 @@ import {
   JOB_LEAD_FOLDERS,
   countLeadsInFolder,
   getLeadFolder,
+  getNextFolderId,
 } from "../utils/jobLeadFolders";
 
 function getLeadTitle(lead) {
@@ -236,7 +237,10 @@ function AIDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {folderLeads.map((lead) => (
+              {folderLeads.map((lead) => {
+                const nextFolderId = getNextFolderId(getLeadFolder(lead));
+
+                return (
                 <div
                   key={lead.id}
                   draggable
@@ -250,10 +254,42 @@ function AIDashboard() {
                     setDraggingLeadId(null);
                     setDropFolderId(null);
                   }}
-                  className={`bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-grab hover:shadow-md transition-shadow ${
+                  className={`relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-12 cursor-grab hover:shadow-md transition-shadow ${
                     draggingLeadId === lead.id ? "opacity-60" : ""
                   }`}
                 >
+                  {nextFolderId && (
+                    <button
+                      type="button"
+                      title="Move to next stage"
+                      aria-label="Move to next stage"
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleDropOnFolder(nextFolderId, lead.id);
+                      }}
+                      className="group absolute top-3 right-3 text-indigo-600 hover:text-indigo-800"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                      <span className="pointer-events-none absolute right-0 top-full mt-1 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100">
+                        Move to next stage
+                      </span>
+                    </button>
+                  )}
                   <h3 className="text-lg font-semibold text-gray-900">
                     {getLeadTitle(lead)}
                   </h3>
@@ -266,7 +302,8 @@ function AIDashboard() {
                     Saved on {formatLeadDate(lead.createdAt)}
                   </p>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
