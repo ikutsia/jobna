@@ -336,10 +336,13 @@ function AIDashboard() {
                     setDraggingLeadId(null);
                     setDropFolderId(null);
                   }}
-                  className={`relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-14 cursor-grab hover:shadow-md transition-shadow ${
+                  className={`group/card relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-14 cursor-grab hover:shadow-md transition-shadow ${
                     draggingLeadId === lead.id ? "opacity-60" : ""
                   }`}
                 >
+                  <span className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 group-hover/card:opacity-100 group-has-[:is(button,a):hover]/card:opacity-0">
+                    Drag and drop into another folder
+                  </span>
                   {nextFolderId && (
                     <button
                       type="button"
