@@ -221,7 +221,7 @@ function AIDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6 flex flex-wrap items-center gap-4">
+        <div className="mb-6 flex flex-col items-start gap-2">
           <Link
             to="/"
             className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
