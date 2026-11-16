@@ -36,10 +36,10 @@ npm install @google/generative-ai
 
 ```bash
 # OpenAI API Key
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=jobna_openai_api_key
 
 # Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=jobna_gemini_api_key
 
 # Enable hybrid AI (optional - can be toggled in UI)
 USE_HYBRID_AI=true

@@ -16,16 +16,16 @@ Copy this content into your `.env` file:
 
 ```bash
 # Firebase Configuration
-REACT_APP_FIREBASE_API_KEY=AIzaSyCV-ndDepO-mxSDmKAJHggfUbphCkIFnpc
-REACT_APP_FIREBASE_AUTH_DOMAIN=jobna-451c2.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=jobna-451c2
-REACT_APP_FIREBASE_STORAGE_BUCKET=jobna-451c2.firebasestorage.app
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=106696338896
-REACT_APP_FIREBASE_APP_ID=1:106696338896:web:2f1327e0a056a6c8271dd5
-REACT_APP_FIREBASE_MEASUREMENT_ID=G-DEK5L2KVL2
+REACT_APP_FIREBASE_API_KEY=jobna_firebase_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=jobna-project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=jobna-project
+REACT_APP_FIREBASE_STORAGE_BUCKET=jobna-project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=jobna_messaging_sender_id
+REACT_APP_FIREBASE_APP_ID=jobna_firebase_app_id
+REACT_APP_FIREBASE_MEASUREMENT_ID=jobna_measurement_id
 
 # OpenAI Configuration
-REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
+REACT_APP_OPENAI_API_KEY=jobna_openai_api_key
 ```
 
 ### 3. **Important Notes**

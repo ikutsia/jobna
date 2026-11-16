@@ -99,7 +99,7 @@ You should see:
 Make sure your Netlify environment variables include:
 
 ```
-GEMINI_API_KEY=AIza...your_key_here
+GEMINI_API_KEY=jobna_gemini_api_key
 ```
 
 **Important:** Do NOT include quotes around the API key value.

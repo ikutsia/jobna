@@ -22,7 +22,7 @@ Files updated:
 Added to Netlify:
 
 ```
-GEMINI_API_KEY=AIzaSyBVrCNWBxAcvAMybxf8_Y95zpWYkFVILys
+GEMINI_API_KEY=jobna_gemini_api_key
 ```
 
 ## Next Steps

@@ -2,27 +2,27 @@
 # Copy this to your .env file and fill in your API keys
 
 # OpenAI API Key (for GPT-3.5-turbo)
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=jobna_openai_api_key
 
 # Google Gemini API Key (for Gemini 1.5-flash)
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=jobna_gemini_api_key
 
 # Enable/disable hybrid AI analysis
 # Set to 'true' to use hybrid AI, 'false' for traditional analysis
 USE_HYBRID_AI=true
 
 # Firebase Configuration (existing)
-FIREBASE_API_KEY=your_firebase_api_key
-FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-FIREBASE_APP_ID=your_app_id
+FIREBASE_API_KEY=jobna_firebase_api_key
+FIREBASE_AUTH_DOMAIN=jobna-project.firebaseapp.com
+FIREBASE_PROJECT_ID=jobna-project
+FIREBASE_STORAGE_BUCKET=jobna-project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=jobna_messaging_sender_id
+FIREBASE_APP_ID=jobna_firebase_app_id
 
 # Netlify Environment Variables
 # Add these to your Netlify site settings under Environment Variables
 
 # For Netlify Functions:
-# OPENAI_API_KEY=your_openai_api_key_here
-# GEMINI_API_KEY=your_gemini_api_key_here
+# OPENAI_API_KEY=jobna_openai_api_key
+# GEMINI_API_KEY=jobna_gemini_api_key
 # USE_HYBRID_AI=true

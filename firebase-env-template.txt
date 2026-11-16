@@ -1,16 +1,18 @@
 # Firebase Configuration Template
-# Copy this content to a file named .env in your project root
+# Copy this content to a file named .env in the Jobna project root
+# Replace each jobna_ placeholder with the real value from the Firebase console
 
-REACT_APP_FIREBASE_API_KEY=AIzaSyCV-ndDepO-mxSDmKAJHggfUbphCkIFnpc
-REACT_APP_FIREBASE_AUTH_DOMAIN=jobna-451c2.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=jobna-451c2
-REACT_APP_FIREBASE_STORAGE_BUCKET=jobna-451c2.firebasestorage.app
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=106696338896
-REACT_APP_FIREBASE_APP_ID=1:106696338896:web:2f1327e0a056a6c8271dd5
-REACT_APP_FIREBASE_MEASUREMENT_ID=G-DEK5L2KVL2
+REACT_APP_FIREBASE_API_KEY=jobna_firebase_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=jobna-project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=jobna-project
+REACT_APP_FIREBASE_STORAGE_BUCKET=jobna-project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=jobna_messaging_sender_id
+REACT_APP_FIREBASE_APP_ID=jobna_firebase_app_id
+REACT_APP_FIREBASE_MEASUREMENT_ID=jobna_measurement_id
 
 # Instructions:
 # 1. Create a new file named .env in your project root
 # 2. Copy the above content into it
-# 3. Save the file
-# 4. Restart your development server
+# 3. Replace placeholders with Jobna Firebase values
+# 4. Save the file
+# 5. Restart your development server

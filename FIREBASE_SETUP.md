@@ -53,13 +53,13 @@ npm install firebase
 
 ```javascript
 const firebaseConfig = {
-  apiKey: "your-actual-api-key",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-actual-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-actual-sender-id",
-  appId: "your-actual-app-id",
-  measurementId: "your-actual-measurement-id", // Only if you enabled Analytics
+  apiKey: "jobna_firebase_api_key",
+  authDomain: "jobna-project.firebaseapp.com",
+  projectId: "jobna-project",
+  storageBucket: "jobna-project.appspot.com",
+  messagingSenderId: "jobna_messaging_sender_id",
+  appId: "jobna_firebase_app_id",
+  measurementId: "jobna_measurement_id", // Only if you enabled Analytics
 };
 ```
 

@@ -1,6 +1,6 @@
 # Simple Setup Using Project ID Only
 
-Since you already have your Firebase Project ID (`jobna-451c2`), you can use this simpler approach:
+Since you already have your Firebase Project ID (`jobna-project`), you can use this simpler approach:
 
 ## Steps:
 
@@ -12,7 +12,7 @@ Since you already have your Firebase Project ID (`jobna-451c2`), you can use thi
 2. **Add this variable**:
 
    - **Key**: `FIREBASE_PROJECT_ID`
-   - **Value**: `jobna-451c2` (your project ID from the Firebase console)
+   - **Value**: `jobna-project` (the Jobna Firebase project ID from the Firebase console)
 
 3. **That's it!**
 
