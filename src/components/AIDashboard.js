@@ -32,6 +32,27 @@ function getLeadDescription(lead) {
   );
 }
 
+function LeadTextToggle({ text }) {
+  const [expanded, setExpanded] = useState(false);
+  const description = text || "No description available.";
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={() => setExpanded((open) => !open)}
+        className="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+      >
+        {expanded ? "Hide text" : "Show text"}
+      </button>
+      {expanded && (
+        <p className="mt-3 text-gray-700 whitespace-pre-line">{description}</p>
+      )}
+    </div>
+  );
+}
+
 function formatLeadDate(value) {
   if (!value) return "Unknown date";
   if (typeof value.toDate === "function") {
@@ -413,6 +434,7 @@ function AIDashboard() {
                       <p className="text-xs text-gray-500 mt-2">
                         Saved on {formatLeadDate(lead.createdAt)}
                       </p>
+                      <LeadTextToggle text={getLeadDescription(lead)} />
                     </div>
 
                     <div className="flex flex-col gap-2 w-full sm:w-auto lg:min-w-[140px] lg:mr-4">
