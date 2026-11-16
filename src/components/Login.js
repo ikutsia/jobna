@@ -2,6 +2,24 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../firebase/auth";
 
+function getLoginErrorMessage(errorCode) {
+  switch (errorCode) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+    case "auth/invalid-email":
+      return "Email or password is incorrect.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Please wait a moment and try again.";
+    case "auth/network-request-failed":
+      return "Connection problem. Check your internet and try again.";
+    case "auth/user-disabled":
+      return "This account has been disabled.";
+    default:
+      return "Could not sign in. Please try again.";
+  }
+}
+
 function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -61,10 +79,8 @@ function Login() {
           // Redirect to account page
           navigate("/account");
         } else {
-          setSubmitError(
-            result.error || "Login failed. Please check your credentials."
-          );
-          console.error("Login error:", result.error);
+          setSubmitError(getLoginErrorMessage(result.errorCode));
+          console.error("Login error:", result.errorCode || result.error);
         }
       } catch (error) {
         setSubmitError("An unexpected error occurred. Please try again.");
