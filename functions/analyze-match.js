@@ -206,19 +206,6 @@ async function performAIAnalysis(cvText, jdText) {
     "✅ GEMINI_API_KEY found, length:",
     process.env.GEMINI_API_KEY.length
   );
-  console.log(
-    "✅ GEMINI_API_KEY starts with:",
-    process.env.GEMINI_API_KEY.substring(0, 4)
-  );
-
-  // Validate API key format
-  if (!process.env.GEMINI_API_KEY.startsWith("AIza")) {
-    console.error("❌ Invalid GEMINI_API_KEY format!");
-    throw new Error(
-      "GEMINI_API_KEY does not have valid format. It should start with 'AIza'."
-    );
-  }
-
   try {
     // Comprehensive keyword analysis
     const keywordPrompt = `Extract and compare ALL relevant technical and professional keywords from both the CV and Job Description. Be comprehensive - include all important terms, skills, technologies, and qualifications. There are NO limits on the number of keywords.

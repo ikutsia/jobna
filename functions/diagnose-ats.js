@@ -42,15 +42,7 @@ exports.handler = async (event, context) => {
       console.error("❌ Failed to import Gemini library:", importError.message);
     }
 
-    // Test API key format
-    let apiKeyStatus = "Invalid";
-    if (envVars.GEMINI_API_KEY) {
-      if (envVars.GEMINI_API_KEY.startsWith("AIza")) {
-        apiKeyStatus = "Valid format";
-      } else {
-        apiKeyStatus = "Invalid format (should start with 'AIza')";
-      }
-    }
+    let apiKeyStatus = envVars.GEMINI_API_KEY ? "Set" : "Missing";
 
     // Test actual API connection if key is available
     let apiConnectionStatus = "Not tested";
@@ -141,12 +133,6 @@ function generateRecommendations(apiKey, keyStatus, connectionStatus) {
       issue: "GEMINI_API_KEY is missing",
       solution:
         "Add GEMINI_API_KEY to Netlify environment variables and redeploy",
-    });
-  } else if (keyStatus !== "Valid format") {
-    recommendations.push({
-      priority: "HIGH",
-      issue: "GEMINI_API_KEY has invalid format",
-      solution: "Check your API key format. It should start with 'AIza'",
     });
   } else if (connectionStatus === "Failed") {
     recommendations.push({

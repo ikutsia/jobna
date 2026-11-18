@@ -113,7 +113,7 @@ export const getUserJobApplications = async (uid) => {
     const q = query(
       collection(db, "jobApplications"),
       where("userId", "==", uid),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
 
     const querySnapshot = await getDocs(q);
@@ -179,7 +179,10 @@ export const deleteUserJobLead = async (uid, leadId) => {
     }
 
     if (leadSnap.data().userId !== uid) {
-      return { success: false, error: "You can only delete your own job leads" };
+      return {
+        success: false,
+        error: "You can only delete your own job leads",
+      };
     }
 
     await deleteDoc(leadRef);
@@ -253,7 +256,7 @@ export const getUserResumeAnalyses = async (uid) => {
     const q = query(
       collection(db, "resumeAnalyses"),
       where("userId", "==", uid),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
 
     const querySnapshot = await getDocs(q);
