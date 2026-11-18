@@ -549,9 +549,9 @@ function AnalyzeNow() {
               </div>
             </div>
 
-            {/* Skills Analysis */}
+            {/* Keyword Analysis */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Matching Skills */}
+              {/* Matching Keywords */}
               <div className="bg-white rounded-2xl shadow-xl p-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <svg
@@ -567,7 +567,7 @@ function AnalyzeNow() {
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  Matching Skills
+                  Matching Keywords
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {analysisResults?.skillsMatch &&
@@ -582,13 +582,13 @@ function AnalyzeNow() {
                     ))
                   ) : (
                     <p className="text-gray-500 text-sm">
-                      No matching skills found yet.
+                      No matching keywords found yet.
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Missing Skills */}
+              {/* Missing Keywords */}
               <div className="bg-white rounded-2xl shadow-xl p-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <svg
@@ -604,7 +604,7 @@ function AnalyzeNow() {
                       d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
-                  Missing Skills
+                  Missing Keywords
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {analysisResults?.missingSkills &&
@@ -619,7 +619,7 @@ function AnalyzeNow() {
                     ))
                   ) : (
                     <p className="text-gray-500 text-sm">
-                      No missing skills identified yet.
+                      No missing keywords identified yet.
                     </p>
                   )}
                 </div>
