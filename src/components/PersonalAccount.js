@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { logoutUser } from "../firebase/auth";
 import { auth } from "../firebase/config";
 import {
   getUserProfile,
@@ -96,15 +95,6 @@ function PersonalAccount() {
 
     return () => unsubscribe();
   }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
 
   const handleEdit = () => {
     setEditing(true);
@@ -233,7 +223,7 @@ function PersonalAccount() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="py-24 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your account...</p>
@@ -247,50 +237,18 @@ function PersonalAccount() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full">
-        <div className="mb-6">
-          <Link
-            to="/"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Home
-          </Link>
-        </div>
-
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="text-center flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {userProfile?.firstName
-                ? `${userProfile.firstName}'s Personal Account`
-                : "Personal Account"}
-            </h1>
-            <p className="text-gray-600">
-              Manage your profile and account settings
-            </p>
-          </div>
-          <div className="flex-shrink-0">
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-            >
-              Sign Out
-            </button>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {userProfile?.firstName
+              ? `${userProfile.firstName}'s Personal Account`
+              : "Personal Account"}
+          </h1>
+          <p className="text-gray-600">
+            Manage your profile and account settings
+          </p>
         </div>
 
         {/* Success/Error Message */}
