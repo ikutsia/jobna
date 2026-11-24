@@ -16,14 +16,18 @@ function HomePage() {
   return (
     <section className="py-12 md:py-24">
       <div className="max-w-7xl mx-auto px-4 text-center">
-        <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-6 md:mb-8 leading-tight">
-          Tired of laboring with the job search and applying manually?
-        </h1>
+        <div className="mb-6 md:mb-8">
+          <h1 className="inline-block max-w-full text-3xl md:text-5xl font-black text-gray-900 leading-tight transition-transform hover:scale-[1.02]">
+            Tired of laboring with the job search and applying manually?
+          </h1>
+        </div>
 
-        <h2 className="text-xl md:text-3xl font-bold text-blue-600 mb-6 md:mb-8 leading-tight">
-          Supercharge your job search, applications and monitoring using
-          powerful AI tools built just for you!
-        </h2>
+        <div className="mb-6 md:mb-8">
+          <h2 className="inline-block max-w-full text-xl md:text-3xl font-bold text-blue-600 leading-tight transition-transform hover:scale-[1.02]">
+            Supercharge your job search, applications and monitoring using
+            powerful AI tools built just for you!
+          </h2>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-6 md:mb-8">
           <Link
@@ -60,7 +64,7 @@ function HomePage() {
           </a>
         </div>
 
-        <p className="text-lg md:text-xl text-orange-600 font-semibold leading-relaxed">
+        <p className="inline-block max-w-full text-lg md:text-xl text-orange-600 font-semibold leading-relaxed transition-transform hover:scale-[1.02]">
           Hack into the mind of the employer using AI and increase your odds of
           being noticed, interviewed and hired.
         </p>
