@@ -26,6 +26,9 @@ yarn-error.log*
 # Netlify
 .netlify
 
+# Deno (not used by Jobna)
+deno.lock
+
 # IDE
 .vscode/
 .idea/
