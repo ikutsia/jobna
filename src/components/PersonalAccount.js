@@ -59,6 +59,7 @@ function PersonalAccount() {
   const [deletingLeadId, setDeletingLeadId] = useState(null);
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState("");
+  const [savedLeadsRevealed, setSavedLeadsRevealed] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -585,7 +586,8 @@ function PersonalAccount() {
                 </span>
               </div>
 
-              {jobLeadsLoading ? (
+              {savedLeadsRevealed &&
+                (jobLeadsLoading ? (
                 <p className="text-gray-500">Loading saved job leads...</p>
               ) : jobLeads.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
@@ -657,7 +659,15 @@ function PersonalAccount() {
                     );
                   })}
                 </div>
-              )}
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setSavedLeadsRevealed((open) => !open)}
+                className="mt-4 w-full border border-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {savedLeadsRevealed ? "Hide" : "Reveal"}
+              </button>
             </div>
           </div>
 

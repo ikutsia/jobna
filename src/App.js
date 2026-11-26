@@ -32,7 +32,7 @@ function HomePage() {
         <div className="flex justify-center mb-3 md:mb-4">
           <Link
             to="/ai-dashboard"
-            className="bg-black hover:bg-gray-800 text-white font-semibold py-4 px-10 rounded-lg text-lg md:text-xl transition-[transform,colors] hover:scale-[1.02]"
+            className="bg-black text-white font-semibold py-4 px-10 rounded-lg text-lg md:text-xl transition-transform hover:scale-[1.02]"
           >
             Your Job Tracker
           </Link>
