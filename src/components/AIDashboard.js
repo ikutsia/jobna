@@ -347,7 +347,18 @@ function AIDashboard() {
                       {formatLeadDate(lead.createdAt)}
                     </td>
                     <td className="border border-gray-300 px-2 py-1 text-gray-900">
-                      {getLeadSourceLabel(lead)}
+                      {lead.sourceUrl || lead.url ? (
+                        <a
+                          href={lead.sourceUrl || lead.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-900 hover:underline"
+                        >
+                          {getLeadSourceLabel(lead)}
+                        </a>
+                      ) : (
+                        getLeadSourceLabel(lead)
+                      )}
                     </td>
                   </tr>
                 ))
@@ -357,7 +368,7 @@ function AIDashboard() {
         </div>
 
         <p className="text-gray-600 mb-8">
-          Open a folder to see its job leads. Drag a card onto another folder to
+          Open a folder to see its tickets. Drag a card onto another folder to
           move it.
         </p>
 
