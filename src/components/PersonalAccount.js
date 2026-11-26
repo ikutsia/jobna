@@ -493,7 +493,7 @@ function PersonalAccount() {
                 onClick={() => navigate("/ai-dashboard")}
                 className="text-xl font-semibold text-white mb-4 hover:underline text-left"
               >
-                Your AI Dashboard
+                Your Job Tracker
               </button>
               <div className="border-b border-gray-600 mb-6"></div>
               <div className="grid grid-cols-5 gap-0">
