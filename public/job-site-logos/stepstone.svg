@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
+  <mask id="stepstone-icon-mask" width="36" height="36" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+    <path fill="#fff" d="M4.706 0A4.705 4.705 0 0 0 0 4.705v26.59A4.706 4.706 0 0 0 4.624 36h26.728c2.572-.027 4.624-2.134 4.624-4.705V4.705A4.705 4.705 0 0 0 31.27 0z"/>
+  </mask>
+  <g mask="url(#stepstone-icon-mask)">
+    <path fill="url(#stepstone-icon-gradient)" d="M35.976 0H0v36h35.976z"/>
+    <path fill="#0a1e5f" d="M17.853 13.611c-.554-2.75 2.55-4.167 6.374-3.944 3.741.194 7.732 1.86 7.926 3.666.194 1.667-3.77 2.64-7.206 2.64s-6.678-.418-7.094-2.362M16.634 9.861c.221-2.056-3.437-2.417-5.931-1.667-2.494.778-4.379 2.473-2.688 3.278.97.445 2.854.695 5.071.334 2.217-.334 3.437-.778 3.548-1.945M24.864 21.917c-.416-3.528-4.323-4.64-8.563-4.084-4.24.528-8.84 2.695-10.614 5.667-2.411 4 2.688 6.195 8.258 6.111 5.57-.083 11.529-2.528 10.92-7.694"/>
+  </g>
+  <defs>
+    <linearGradient id="stepstone-icon-gradient" x1=".923" x2="34.828" y1="34.427" y2=".602" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff9e8c"/>
+      <stop offset=".259" stop-color="#f5d4c8"/>
+      <stop offset=".357" stop-color="#f2e2d8"/>
+      <stop offset=".467" stop-color="#f0f0e7"/>
+      <stop offset=".555" stop-color="#e2eee6"/>
+      <stop offset=".611" stop-color="#d3ece6"/>
+      <stop offset=".706" stop-color="#bae8e5"/>
+      <stop offset="1" stop-color="#29d3df"/>
+    </linearGradient>
+  </defs>
+</svg>

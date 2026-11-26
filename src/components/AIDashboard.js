@@ -13,6 +13,7 @@ import {
   getLeadFolder,
   getNextFolderId,
 } from "../utils/jobLeadFolders";
+import { getLeadTicketLabel } from "../utils/jobLeadTickets";
 
 function getLeadTitle(lead) {
   return lead.title || lead.jobTitle || lead.position || "Untitled job lead";
@@ -404,6 +405,11 @@ function AIDashboard() {
                   )}
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
+                      {getLeadTicketLabel(lead) && (
+                        <p className="text-xs font-semibold text-gray-500 mb-1">
+                          {getLeadTicketLabel(lead)}
+                        </p>
+                      )}
                       <h3 className="text-lg font-semibold text-gray-900">
                         {getLeadTitle(lead)}
                       </h3>

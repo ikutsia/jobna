@@ -9,6 +9,7 @@ import {
   updateUserProfile,
 } from "../firebase/firestore";
 import { countLeadsInFolder } from "../utils/jobLeadFolders";
+import { getLeadTicketLabel } from "../utils/jobLeadTickets";
 
 function LeadDescriptionPreview({ text }) {
   const description = text || "No description available.";
@@ -605,6 +606,7 @@ function PersonalAccount() {
                     const leadTitle = getLeadTitle(lead);
                     const leadCompany = getLeadCompany(lead);
                     const leadDescription = getLeadDescription(lead);
+                    const ticketLabel = getLeadTicketLabel(lead);
 
                     return (
                       <div
@@ -613,6 +615,11 @@ function PersonalAccount() {
                       >
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                           <div className="min-w-0">
+                            {ticketLabel && (
+                              <p className="text-xs font-semibold text-gray-500 mb-1">
+                                {ticketLabel}
+                              </p>
+                            )}
                             <h4 className="text-lg font-semibold text-gray-900">
                               {leadTitle}
                             </h4>

@@ -144,6 +144,7 @@ export const registerUser = async (email, password, userData) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       agreeToTerms: userData.agreeToTerms,
+      lastTicketNumber: 0,
     });
 
     // Update display name

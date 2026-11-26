@@ -11,8 +11,10 @@ import {
   orderBy,
   addDoc,
   serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "./config";
+import { parseLeadTicketNumber } from "../utils/jobLeadTickets";
 
 /**
  * Check if an email is on the beta whitelist.
@@ -42,6 +44,7 @@ export const createUserProfile = async (uid, userData) => {
     await setDoc(doc(db, "users", uid), {
       uid,
       ...userData,
+      lastTicketNumber: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -133,6 +136,84 @@ export const getUserJobApplications = async (uid) => {
   }
 };
 
+const parseLeadCreatedAt = (val) => {
+  if (!val) return 0;
+  if (typeof val.toMillis === "function") return val.toMillis();
+  const parsed = new Date(val).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const parseLastTicketNumber = (value) => {
+  if (value == null || value === "") return 0;
+  const n = typeof value === "string" ? parseInt(value, 10) : Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+};
+
+const ensureUserJobLeadTickets = async (uid, jobLeads) => {
+  const unnumbered = jobLeads.filter(
+    (lead) => parseLeadTicketNumber(lead.ticketNumber) == null
+  );
+  const maxExisting = jobLeads.reduce((max, lead) => {
+    const ticket = parseLeadTicketNumber(lead.ticketNumber);
+    return ticket != null && ticket > max ? ticket : max;
+  }, 0);
+
+  if (unnumbered.length === 0 && maxExisting === 0) {
+    return;
+  }
+
+  const userRef = doc(db, "users", uid);
+
+  await runTransaction(db, async (transaction) => {
+    const userSnap = await transaction.get(userRef);
+    let last = parseLastTicketNumber(userSnap.data()?.lastTicketNumber);
+
+    const stillUnnumbered = [];
+    for (const lead of unnumbered) {
+      const leadRef = doc(db, "job_leads", lead.id);
+      const leadSnap = await transaction.get(leadRef);
+      if (!leadSnap.exists()) continue;
+      const existingTicket = parseLeadTicketNumber(leadSnap.data().ticketNumber);
+      if (existingTicket != null) {
+        last = Math.max(last, existingTicket);
+        lead.ticketNumber = existingTicket;
+        continue;
+      }
+      stillUnnumbered.push({ lead, leadRef });
+    }
+
+    last = Math.max(last, maxExisting);
+
+    stillUnnumbered.sort(
+      (a, b) =>
+        parseLeadCreatedAt(a.lead.createdAt) -
+        parseLeadCreatedAt(b.lead.createdAt)
+    );
+
+    let next = last;
+    for (const { lead, leadRef } of stillUnnumbered) {
+      next += 1;
+      transaction.update(leadRef, { ticketNumber: next });
+      lead.ticketNumber = next;
+    }
+
+    if (next !== parseLastTicketNumber(userSnap.data()?.lastTicketNumber)) {
+      if (userSnap.exists()) {
+        transaction.update(userRef, {
+          lastTicketNumber: next,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        transaction.set(userRef, {
+          uid,
+          lastTicketNumber: next,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+  });
+};
+
 // Job Lead Operations
 export const getUserJobLeads = async (uid) => {
   try {
@@ -140,22 +221,21 @@ export const getUserJobLeads = async (uid) => {
     const querySnapshot = await getDocs(q);
     const jobLeads = [];
 
-    querySnapshot.forEach((doc) => {
+    querySnapshot.forEach((docSnap) => {
       jobLeads.push({
-        id: doc.id,
-        ...doc.data(),
+        id: docSnap.id,
+        ...docSnap.data(),
       });
     });
 
-    jobLeads.sort((a, b) => {
-      const parseTime = (val) => {
-        if (!val) return 0;
-        if (typeof val.toMillis === "function") return val.toMillis();
-        const parsed = new Date(val).getTime();
-        return isNaN(parsed) ? 0 : parsed;
-      };
+    try {
+      await ensureUserJobLeadTickets(uid, jobLeads);
+    } catch (ticketError) {
+      console.error("Job lead ticket backfill error:", ticketError);
+    }
 
-      return parseTime(b.createdAt) - parseTime(a.createdAt);
+    jobLeads.sort((a, b) => {
+      return parseLeadCreatedAt(b.createdAt) - parseLeadCreatedAt(a.createdAt);
     });
 
     return { success: true, data: jobLeads };
@@ -186,6 +266,7 @@ export const deleteUserJobLead = async (uid, leadId) => {
     }
 
     await deleteDoc(leadRef);
+    // Ticket numbers are never reused; lastTicketNumber is left unchanged.
     return { success: true };
   } catch (error) {
     console.error("Delete job lead error:", error);
