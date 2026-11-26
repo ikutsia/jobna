@@ -300,7 +300,7 @@ function AIDashboard() {
                 <th className="w-10 border border-gray-300 bg-[#217346] px-2 py-1 font-medium text-white text-center">
                   1
                 </th>
-                {["Ticket", "Company", "Role", "Folder", "Saved", "Source"].map(
+                {["Ticket", "Company", "Role", "Status", "Saved", "Source"].map(
                   (label) => (
                     <th
                       key={label}
@@ -368,8 +368,8 @@ function AIDashboard() {
         </div>
 
         <p className="text-gray-600 mb-8">
-          Open a folder to see its tickets. Drag a card onto another folder to
-          move it.
+          Open a Status folder to see its tickets. Drag a card onto another
+          Status folder to move it.
         </p>
 
         {moveError && (
