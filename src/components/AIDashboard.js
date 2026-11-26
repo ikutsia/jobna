@@ -13,7 +13,7 @@ import {
   getLeadFolder,
   getNextFolderId,
 } from "../utils/jobLeadFolders";
-import { getLeadTicketLabel } from "../utils/jobLeadTickets";
+import { getLeadTicketLabel, parseLeadTicketNumber } from "../utils/jobLeadTickets";
 
 function getLeadTitle(lead) {
   return lead.title || lead.jobTitle || lead.position || "Untitled job lead";
@@ -65,6 +65,31 @@ function formatLeadDate(value) {
     : parsed.toLocaleDateString();
 }
 
+function getLeadFolderLabel(lead) {
+  const folderId = getLeadFolder(lead);
+  return (
+    JOB_LEAD_FOLDERS.find((folder) => folder.id === folderId)?.label ||
+    folderId
+  );
+}
+
+function getLeadSourceLabel(lead) {
+  const source = String(lead.source || "").trim();
+  if (source) {
+    if (source.toLowerCase() === "linkedin") return "LinkedIn";
+    return source.charAt(0).toUpperCase() + source.slice(1);
+  }
+  const url = lead.sourceUrl || lead.url || "";
+  try {
+    if (url) {
+      return new URL(url).hostname.replace(/^www\./, "");
+    }
+  } catch {
+    /* ignore invalid url */
+  }
+  return "—";
+}
+
 function AIDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -107,6 +132,15 @@ function AIDashboard() {
   const folderLeads = jobLeads.filter(
     (lead) => getLeadFolder(lead) === activeFolder
   );
+
+  const spreadsheetLeads = [...jobLeads].sort((a, b) => {
+    const ticketA = parseLeadTicketNumber(a.ticketNumber);
+    const ticketB = parseLeadTicketNumber(b.ticketNumber);
+    if (ticketA == null && ticketB == null) return 0;
+    if (ticketA == null) return 1;
+    if (ticketB == null) return -1;
+    return ticketA - ticketB;
+  });
 
   const handleDropOnFolder = async (folderId, leadId) => {
     setDropFolderId(null);
@@ -247,6 +281,81 @@ function AIDashboard() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Your Job Tracker
         </h1>
+
+        <div className="mb-8 overflow-x-auto border border-gray-300 rounded bg-white">
+          <table className="w-full min-w-[720px] border-collapse text-sm">
+            <thead>
+              <tr>
+                <th className="w-10 border border-gray-300 bg-gray-100 px-2 py-1 font-medium text-gray-500"></th>
+                {["A", "B", "C", "D", "E", "F"].map((letter) => (
+                  <th
+                    key={letter}
+                    className="border border-gray-300 bg-gray-100 px-2 py-1 font-medium text-gray-500 text-center"
+                  >
+                    {letter}
+                  </th>
+                ))}
+              </tr>
+              <tr>
+                <th className="w-10 border border-gray-300 bg-[#217346] px-2 py-1 font-medium text-white text-center">
+                  1
+                </th>
+                {["Ticket", "Company", "Role", "Folder", "Saved", "Source"].map(
+                  (label) => (
+                    <th
+                      key={label}
+                      className="border border-gray-300 bg-[#217346] px-2 py-1 font-medium text-white text-left"
+                    >
+                      {label}
+                    </th>
+                  )
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {spreadsheetLeads.length === 0 ? (
+                <tr>
+                  <th className="w-10 border border-gray-300 bg-gray-100 px-2 py-1 font-normal text-gray-500 text-center">
+                    2
+                  </th>
+                  <td
+                    colSpan={6}
+                    className="border border-gray-300 px-2 py-2 text-gray-500"
+                  >
+                    No saved job leads yet.
+                  </td>
+                </tr>
+              ) : (
+                spreadsheetLeads.map((lead, index) => (
+                  <tr key={lead.id}>
+                    <th className="w-10 border border-gray-300 bg-gray-100 px-2 py-1 font-normal text-gray-500 text-center">
+                      {index + 2}
+                    </th>
+                    <td className="border border-gray-300 px-2 py-1 font-medium text-gray-900 whitespace-nowrap">
+                      {getLeadTicketLabel(lead) || "—"}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-gray-900">
+                      {getLeadCompany(lead) || "—"}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-gray-900">
+                      {getLeadTitle(lead)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-gray-900">
+                      {getLeadFolderLabel(lead)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-gray-900 whitespace-nowrap">
+                      {formatLeadDate(lead.createdAt)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-gray-900">
+                      {getLeadSourceLabel(lead)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
         <p className="text-gray-600 mb-8">
           Open a folder to see its job leads. Drag a card onto another folder to
           move it.
