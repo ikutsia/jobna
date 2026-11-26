@@ -29,6 +29,15 @@ function HomePage() {
           </h2>
         </div>
 
+        <div className="flex justify-center mb-3 md:mb-4">
+          <Link
+            to="/ai-dashboard"
+            className="bg-black hover:bg-gray-800 text-white font-semibold py-4 px-10 rounded-lg transition-colors text-lg md:text-xl"
+          >
+            Your Job Tracker
+          </Link>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-6 md:mb-8">
           <Link
             to="/upload-cv"

@@ -244,7 +244,7 @@ function AIDashboard() {
         </div>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Your AI Dashboard
+          Your Job Tracker
         </h1>
         <p className="text-gray-600 mb-8">
           Open a folder to see its job leads. Drag a card onto another folder to
