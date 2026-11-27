@@ -1,14 +1,17 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 function PrivacyPolicy() {
+  const [searchParams] = useSearchParams();
+  const fromSignup = searchParams.get("from") === "signup";
+
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <div className="mb-6">
           <Link
-            to="/signup"
+            to={fromSignup ? "/signup" : "/"}
             className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
           >
             <svg
@@ -24,7 +27,7 @@ function PrivacyPolicy() {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back to Sign Up
+            {fromSignup ? "Back to Sign Up" : "Back to Home"}
           </Link>
         </div>
 
@@ -34,7 +37,7 @@ function PrivacyPolicy() {
             Privacy Policy
           </h1>
           <p className="text-lg text-gray-600">
-            Last updated: August 18, 2026
+            Last updated: November 27, 2026
           </p>
         </div>
 
@@ -48,7 +51,13 @@ function PrivacyPolicy() {
                   1. Introduction
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
-                  At Jobna AI ("we," "our," or "us"), we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered job search platform and services.
+                  At Jobna AI ("we," "our," or "us"), we are committed to
+                  protecting your privacy and ensuring the security of your
+                  personal information. This Privacy Policy explains how we
+                  collect, use, disclose, and safeguard your information when
+                  you use our AI-powered job search platform and services
+                  (available via jobna.app, jobna.netlify.app, and the Jobna
+                  Chrome extension).
                 </p>
               </section>
 
@@ -101,7 +110,21 @@ function PrivacyPolicy() {
                       <li>Job description data for matching algorithms</li>
                       <li>Application history and success metrics</li>
                       <li>Feedback on AI recommendations and suggestions</li>
-                      <li><strong>Extension Web Content Capture:</strong> When you explicitly click the capture button within the Jobna Chrome extension, the extension reads on-page job posting content (such as job title, company name, location, and full job description) strictly to save and sync it to your personal dashboard.</li>
+                      <li>
+                        <strong>Extension Web Content Capture:</strong> When you
+                        explicitly click the capture button within the Jobna
+                        Chrome extension, the extension reads on-page job
+                        posting content (such as job title, company name,
+                        location, and full job description) strictly to save and
+                        sync it to your personal dashboard.
+                      </li>
+                      <li>
+                        <strong>Local Document Export:</strong> When you request
+                        to export your application materials or captured lead
+                        data (for example, as .docx or .json files), the
+                        extension generates and saves these files to your local
+                        device upon your explicit request.
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -146,7 +169,14 @@ function PrivacyPolicy() {
                     <li>Improve our matching algorithms over time</li>
                   </ul>
                   <p className="text-gray-700 leading-relaxed mt-3">
-                    Your data helps train and improve our AI models to provide better services for all users. We implement appropriate safeguards to protect your privacy during AI processing.
+                    Your data is used to customize and generate your
+                    personalized resume content, tailoring outputs, and job
+                    recommendations. We do not sell your personal data or
+                    application materials to third-party AI model trainers, nor
+                    do we use your private documents to train public foundation
+                    models without your explicit consent. We implement
+                    appropriate safeguards to protect your privacy during AI
+                    processing.
                   </p>
                 </div>
               </section>
@@ -189,9 +219,29 @@ function PrivacyPolicy() {
                     , including the Limited Use requirements. Specifically:
                   </p>
                   <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                    <li>We only use user data to provide or improve the core functionality of the Jobna extension (capturing and tracking job leads).</li>
-                    <li>We do not transfer user data to third parties, except as necessary to provide or improve single-purpose extension features, comply with applicable laws, or protect security.</li>
-                    <li>We do not sell user data, use user data for targeted advertising, or use user data to evaluate creditworthiness or for lending purposes.</li>
+                    <li>
+                      We use the downloads permission solely to generate and
+                      save requested job lead exports and tailored application
+                      files directly to your local device upon your explicit
+                      action.
+                    </li>
+                    <li>
+                      We only use user data to provide or improve the core
+                      functionality of the Jobna extension (capturing job leads,
+                      syncing with your dashboard, tailoring application
+                      materials, and exporting requested files).
+                    </li>
+                    <li>
+                      We do not transfer user data to third parties, except as
+                      necessary to provide or improve single-purpose extension
+                      features, comply with applicable laws, or protect platform
+                      security.
+                    </li>
+                    <li>
+                      We do not sell user data, use user data for targeted
+                      advertising, or use user data to evaluate creditworthiness
+                      or for lending purposes.
+                    </li>
                   </ul>
                 </div>
               </section>
@@ -337,12 +387,14 @@ function PrivacyPolicy() {
 
           {/* Action Buttons */}
           <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/signup"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >
-              Accept & Continue to Sign Up
-            </Link>
+            {fromSignup && (
+              <Link
+                to="/signup"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              >
+                Accept & Continue to Sign Up
+              </Link>
+            )}
             <Link
               to="/"
               className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-8 rounded-lg transition-colors duration-200"

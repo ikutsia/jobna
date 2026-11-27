@@ -636,7 +636,7 @@ function SignUp() {
                   </Link>{" "}
                   and{" "}
                   <Link
-                    to="/privacy-policy"
+                    to="/privacy-policy?from=signup"
                     className="text-blue-600 hover:text-blue-500 font-medium underline"
                   >
                     Privacy Policy
