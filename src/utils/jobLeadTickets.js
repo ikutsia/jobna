@@ -6,5 +6,7 @@ export const parseLeadTicketNumber = (value) => {
 
 export const getLeadTicketLabel = (lead) => {
   const ticketNumber = parseLeadTicketNumber(lead?.ticketNumber);
-  return ticketNumber ? `Ticket ${ticketNumber}` : null;
+  return ticketNumber
+    ? `JOB-${String(ticketNumber).padStart(3, "0")}`
+    : null;
 };
