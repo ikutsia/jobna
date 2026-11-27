@@ -54,6 +54,27 @@ function LeadTextToggle({ text }) {
   );
 }
 
+let ticketDragGhost = null;
+
+function clearTicketDragGhost() {
+  if (ticketDragGhost) {
+    ticketDragGhost.remove();
+    ticketDragGhost = null;
+  }
+}
+
+function setTicketDragImage(event, label) {
+  clearTicketDragGhost();
+  const ghost = document.createElement("div");
+  ghost.textContent = label;
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.style.cssText =
+    "position:absolute;top:-9999px;left:0;padding:6px 10px;background:#111827;color:#fff;font:600 14px/1.2 ui-sans-serif,system-ui,sans-serif;border-radius:6px;white-space:nowrap;";
+  document.body.appendChild(ghost);
+  ticketDragGhost = ghost;
+  event.dataTransfer.setDragImage(ghost, 16, 12);
+}
+
 function formatLeadDate(value) {
   if (!value) return "Unknown date";
   if (typeof value.toDate === "function") {
@@ -459,32 +480,13 @@ function AIDashboard() {
             <div className="space-y-4">
               {folderLeads.map((lead) => {
                 const nextFolderId = getNextFolderId(getLeadFolder(lead));
+                const ticketLabel = getLeadTicketLabel(lead);
 
                 return (
                 <div
                   key={lead.id}
-                  draggable
-                  onDragStart={(event) => {
-                    if (event.target.closest("button, a")) {
-                      event.preventDefault();
-                      return;
-                    }
-                    event.dataTransfer.setData("text/plain", lead.id);
-                    event.dataTransfer.effectAllowed = "move";
-                    setDraggingLeadId(lead.id);
-                    setMoveError("");
-                  }}
-                  onDragEnd={() => {
-                    setDraggingLeadId(null);
-                    setDropFolderId(null);
-                  }}
-                  className={`group/card relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-20 cursor-grab hover:shadow-md transition-shadow ${
-                    draggingLeadId === lead.id ? "opacity-60" : ""
-                  }`}
+                  className="group/card relative bg-gray-50 border border-gray-200 rounded-lg p-4 pr-20 hover:shadow-md transition-shadow"
                 >
-                  <span className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 group-hover/card:opacity-100 group-has-[:is(button,a):hover]/card:opacity-0">
-                    Drag and drop into another folder
-                  </span>
                   {nextFolderId && (
                     <button
                       type="button"
@@ -525,9 +527,27 @@ function AIDashboard() {
                   )}
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
-                      {getLeadTicketLabel(lead) && (
-                        <p className="text-xs font-semibold text-gray-500 mb-1">
-                          {getLeadTicketLabel(lead)}
+                      {ticketLabel && (
+                        <p
+                          draggable
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData("text/plain", lead.id);
+                            event.dataTransfer.effectAllowed = "move";
+                            setTicketDragImage(event, ticketLabel);
+                            setDraggingLeadId(lead.id);
+                            setMoveError("");
+                          }}
+                          onDragEnd={() => {
+                            clearTicketDragGhost();
+                            setDraggingLeadId(null);
+                            setDropFolderId(null);
+                          }}
+                          className="group/ticket relative inline-block text-xs font-semibold text-gray-500 mb-1 cursor-grab select-none active:cursor-grabbing"
+                        >
+                          <span className="pointer-events-none absolute left-1/2 bottom-full mb-1 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-normal text-white opacity-0 group-hover/ticket:opacity-100">
+                            Drag and drop into another folder
+                          </span>
+                          {ticketLabel}
                         </p>
                       )}
                       <h3 className="text-lg font-semibold text-gray-900">
